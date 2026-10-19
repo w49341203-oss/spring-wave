@@ -65,14 +65,16 @@ button{font:inherit;color:inherit;cursor:pointer}
 <!-- ================= 投影頁 ================= -->
 <div id="disp" class="hide">
   <header>
-    <h1>彈簧波動：甩手機看橫波與縱波</h1>
-    <span class="ver">v1.1</span>
+    <h1>彈簧與繩子的波動：甩手機看橫波與縱波</h1>
+    <span class="ver">v1.2</span>
     <span id="conn" class="pill off">手機未連線</span>
     <span class="sp"></span>
     <button class="btn" id="bQR">手機連線</button>
     <button class="btn" id="bFS">全螢幕</button>
   </header>
   <div id="bar">
+    <div class="grp"><button class="btn med sel" data-d="spring">彈簧</button><button class="btn med" data-d="rope">繩子</button></div>
+    <div class="grp hide" id="tenG"><label for="ten">繩子拉多緊</label><input type="range" id="ten" min="1" max="5" step="1" value="3"><span id="tenV"></span></div>
     <div class="grp"><button class="btn mode sel" data-m="T">橫波</button><button class="btn mode" data-m="L">縱波</button><button class="btn mode" data-m="F">自由甩</button></div>
     <div class="grp"><button class="btn end sel" data-e="free">右端：很長（不反射）</button><button class="btn end" data-e="fixed">右端：固定在牆上</button></div>
     <div class="grp"><label for="sens">靈敏度</label><input type="range" id="sens" min="0.5" max="5" step="0.5" value="2"><span id="sensV">2</span></div>
@@ -93,16 +95,16 @@ button{font:inherit;color:inherit;cursor:pointer}
     <div id="stats">
       <div class="card"><b>手機加速度</b><span id="sAcc">0.0</span><small>m/s²（已扣除重力）</small></div>
       <div class="card"><b>手的振動頻率 f</b><span id="sF">—</span><small>每秒來回幾次（Hz）</small></div>
-      <div class="card"><b>波速 v</b><span id="sV">—</span><small>由彈簧決定，甩快甩慢都不變</small></div>
+      <div class="card"><b>波速 v</b><span id="sV">—</span><small id="sVn">由彈簧決定，甩快甩慢都不變</small></div>
       <div class="card"><b>波長 λ ＝ v ÷ f</b><span id="sL">—</span><small>甩得越快（f 大），波長越短</small></div>
-      <div class="card"><b>標記圈（黃色）</b><small id="sMk">只在原位附近來回振動，不會跟著波往前走</small></div>
+      <div class="card"><b id="sMkT">標記圈（黃色）</b><small id="sMk">只在原位附近來回振動，不會跟著波往前走</small></div>
     </div>
   </div>
 </div>
 
 <!-- ================= 手機頁 ================= -->
 <div id="phone" class="hide">
-  <h1>彈簧波動｜手機搖桿 <span class="ver">v1.1</span></h1>
+  <h1>彈簧波動｜手機搖桿 <span class="ver">v1.2</span></h1>
   <div id="pstat" class="pill off">尚未連線</div>
   <div class="row"><label for="pcode">配對代碼</label><input id="pcode" inputmode="numeric" maxlength="4"></div>
   <button class="big" id="pgo">開始</button>
@@ -122,7 +124,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 <script>
 "use strict";
-var VERSION = "v1.1";
+var VERSION = "v1.2";
 var PREFIX = "hhspring-wave-";
 var qs = new URLSearchParams(location.search);
 var isPhone = qs.has("p");
@@ -224,7 +226,14 @@ if (!isPhone) (function () {
   var VT = Math.sqrt(K * (A - L0) * A / M);  // 橫波波速 ≈ 1.7 m/s
   var MK = 20;                               // 黃色標記圈：距手 1 m
   var px, py, vx, vy, damp;
-  var S = { mode: "T", end: "free", sens: 2, slow: false, paused: false };
+  var S = { mode: "T", end: "free", sens: 2, slow: false, paused: false, med: "spring", ten: 3 };
+  /* ---- 繩子模型：拉緊的繩子上下振動照課本的波動方程式；繩子不能被壓縮，往前推只會在手附近鬆垮下垂 ---- */
+  var SLACK = 0.7;                                        // 往前推時，手前方 0.7 m 這段繩子會鬆垮下垂
+  var ROPE_V = [1.0, 1.5, 2.0, 2.5, 3.0];                // 五段拉緊程度對應的橫波波速（m/s）
+  function ropeV() { return ROPE_V[S.ten - 1]; }
+  function ropeT() { var v = ropeV(); return v * v * M / A; } // 拉力 T ＝ v² × 線密度（M÷A）
+  function vT() { return S.med === "rope" ? ropeV() : VT; }
+  function vL() { return S.med === "rope" ? null : VL; }
   var hand = { x: 0, y: 0, vx: 0, vy: 0 }, acc = { x: 0, y: 0, t: -1e9 }, drag = null;
   var hist = [], simT = 0, cross = [], lastSign = 0, accShow = 0;
 
@@ -253,6 +262,7 @@ if (!isPhone) (function () {
     if (S.mode === "L") { hand.y = 0; hand.vy = 0; }
     hand.x = Math.max(-0.1, Math.min(0.1, hand.x));
     hand.y = Math.max(-0.4, Math.min(0.4, hand.y));
+    if (S.med === "rope") { stepRope(h); return; }
     px[0] = hand.x; py[0] = hand.y;
     // 2) 每一小段彈簧的拉力
     var n = lastIndex(), fx = new Float64Array(n + 1), fy = new Float64Array(n + 1);
@@ -271,6 +281,17 @@ if (!isPhone) (function () {
       if (S.mode === "L") py[i] = 0;
     }
     px[n] = n * A; py[n] = 0; vx[n] = 0; vy[n] = 0;
+    simT += h;
+  }
+
+  // 繩子：每一點的上下加速度 ＝ v² ×（左右鄰點高度的彎曲程度），波速 v 由拉力決定
+  function stepRope(h) {
+    if (hand.x < 0) { hand.x = 0; if (hand.vx < 0) hand.vx = 0; }   // 繩子已經拉緊，再往後拉也拉不動
+    px[0] = hand.x; py[0] = hand.y;
+    var n = lastIndex(), c2 = ropeV() * ropeV() / (A * A), i;
+    for (i = 1; i < n; i++) vy[i] += (c2 * (py[i + 1] - 2 * py[i] + py[i - 1]) - (damp[i] + 0.35) * vy[i]) * h;   // 繩子比彈簧多一點摩擦，固定端共振時才不會無限變大
+    for (i = 1; i < n; i++) { py[i] = Math.max(-0.7, Math.min(0.7, py[i] + vy[i] * h)); px[i] = i * A; vx[i] = 0; }
+    py[n] = 0; vy[n] = 0;
     simT += h;
   }
 
@@ -309,9 +330,15 @@ if (!isPhone) (function () {
     if (S.end === "fixed") {
       var wx = X(g, L) + 6; ctx.fillStyle = "#3a4560"; ctx.fillRect(wx, g.y0 - R * 2.2, 12, R * 4.4);
       text("牆", wx + 6, g.y0 - R * 2.2 - 8, C.dim, 15, "center");
-    } else text("彈簧很長，往右延伸 →", X(g, L) - 4, g.y0 - R * 2.2 - 8, C.dim, 15, "right");
-    // 每一圈畫成一個環（垂直於彈簧方向），縱波時用顏色分疏密
-    for (var i = 1; i <= NV; i++) {
+    } else text((S.med === "rope" ? "繩子" : "彈簧") + "很長，往右延伸 →", X(g, L) - 4, g.y0 - R * 2.2 - 8, C.dim, 15, "right");
+    if (S.med === "rope") drawRope(g);
+    else for (var i = 1; i <= NV; i++) drawCoil(g, R, i);
+    afterBody(g, R);
+  }
+
+  // 彈簧：每一圈畫成一個環（垂直於彈簧方向），縱波時用顏色分疏密
+  function drawCoil(g, R, i) {
+    {
       var a = Math.max(0, i - 2), b = Math.min(lastIndex(), i + 2);
       var tx = px[b] - px[a], ty = py[b] - py[a], tl = Math.sqrt(tx * tx + ty * ty) || 1e-9;
       var sp = tl / ((b - a) * A); // 1＝原本間距；<1 密、>1 疏
@@ -324,18 +351,45 @@ if (!isPhone) (function () {
       ctx.beginPath(); ctx.ellipse(0, 0, Math.max(2, R * 0.16), R, 0, 0, Math.PI * 2); ctx.stroke();
       ctx.restore();
     }
+  }
+
+  // 繩子：一條粗線。手往前推時，手前方 SLACK 這段繩子多出來的長度會往下垂（用拋物線估算下垂深度）
+  function drawRope(g) {
+    var n = Math.min(NV, lastIndex()), P = [], d = Math.max(0, hand.x), span = SLACK - d;
+    var sag = d > 0 ? Math.sqrt(3 * span * (SLACK - span) / 8) : 0;   // 弧長 ≈ 跨距 ＋ 8×下垂²÷(3×跨距)
+    for (var i = 0; i <= n; i++) {
+      var x = i * A, y = Y(g, py[i]);
+      if (i * A <= SLACK) { var u = i * A / SLACK; x = d + u * span; y += sag * 4 * u * (1 - u) * g.sc; }
+      P.push([X(g, x), y]);
+    }
+    function path() {
+      ctx.beginPath(); ctx.moveTo(P[0][0], P[0][1]);
+      for (var i = 1; i < n; i++) ctx.quadraticCurveTo(P[i][0], P[i][1], (P[i][0] + P[i + 1][0]) / 2, (P[i][1] + P[i + 1][1]) / 2);
+      ctx.lineTo(P[n][0], P[n][1]);
+    }
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    path(); ctx.strokeStyle = "#6e4f25"; ctx.lineWidth = 11; ctx.stroke();
+    path(); ctx.strokeStyle = "#E0B36A"; ctx.lineWidth = 7; ctx.stroke();
+    var m = P[MK]; ctx.save(); ctx.shadowColor = C.yellow; ctx.shadowBlur = 16; ctx.fillStyle = C.yellow;
+    ctx.beginPath(); ctx.arc(m[0], m[1], 9, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+  }
+
+  function afterBody(g, R) {
+    var rope = S.med === "rope";
     // 標記圈的平衡位置
     var mx = X(g, MK * A), my = Y(g, 0);
     ctx.strokeStyle = C.yellow; ctx.globalAlpha = 0.5; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(mx, my + R * 1.6); ctx.lineTo(mx, my + R * 2.0); ctx.stroke(); ctx.globalAlpha = 1;
-    text("標記圈原位", mx, my + R * 2.0 + 18, C.yellow, 14, "center");
+    text(rope ? "標記點原位" : "標記圈原位", mx, my + R * 2.0 + 18, C.yellow, 14, "center");
     // 手
     var hx = X(g, px[0]), hy = Y(g, py[0]);
     ctx.fillStyle = "#c9d3e6"; ctx.beginPath(); ctx.roundRect(hx - 22, hy - R * 0.9, 18, R * 1.8, 6); ctx.fill();
     text("手", hx - 13, hy - R - 10, "#c9d3e6", 16, "center");
     // 圖例
-    if (S.mode !== "T") { text("■ 密部", 14, 24, C.red, 16); text("■ 疏部", 90, 24, C.blue, 16); }
-    text(S.mode === "T" ? "橫波：振動方向 ⟂ 波前進方向" : S.mode === "L" ? "縱波：振動方向 ∥ 波前進方向" : "自由甩：上下＝橫波、左右＝縱波", W - 14, 24, C.gold, 17, "right");
+    if (S.mode !== "T" && !rope) { text("■ 密部", 14, 24, C.red, 16); text("■ 疏部", 90, 24, C.blue, 16); }
+    var cap = S.mode === "T" ? "橫波：振動方向 ⟂ 波前進方向" : S.mode === "L" ? "縱波：振動方向 ∥ 波前進方向" : "自由甩：上下＝橫波、前後＝縱波";
+    if (rope && S.mode !== "T") cap = "繩子不能被壓縮，所以無法形成縱波：往前推只會讓繩子鬆垮";
+    text(cap, W - 14, 24, C.gold, 17, "right");
     drawGraph(g);
   }
 
@@ -347,7 +401,7 @@ if (!isPhone) (function () {
     var useX = S.mode === "L";
     text(useX ? "位移（左右）" : "位移（上下）", gx + 6, gy + 18, C.dim, 14);
     text("時間 →（最近 6 秒）", gx + gw - 6, gy + gh + 18, C.dim, 14, "right");
-    text("— 手", gx + gw - 200, gy + 18, "#c9d3e6", 14); text("— 標記圈（距手 1 m）", gx + gw - 150, gy + 18, C.yellow, 14);
+    text("— 手", gx + gw - 200, gy + 18, "#c9d3e6", 14); text(S.med === "rope" ? "— 標記點（距手 1 m）" : "— 標記圈（距手 1 m）", gx + gw - 150, gy + 18, C.yellow, 14);
     var amp = useX ? 0.12 : 0.45, span = 6, tNow = simT;
     function line(key, col, w) {
       ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath();
@@ -361,8 +415,9 @@ if (!isPhone) (function () {
     ctx.save(); ctx.beginPath(); ctx.rect(gx, gy, gw, gh); ctx.clip();
     line("h", "#c9d3e6", 1.5); line("m", C.yellow, 2.5);
     ctx.restore();
-    var lag = MK * A / (useX ? VL : VT);
-    text("標記圈晚了約 " + lag.toFixed(2) + " 秒才開始動（波要花時間傳過去）", gx + 6, gy + gh - 8, C.dim, 14);
+    var vv = useX ? vL() : vT(), who = S.med === "rope" ? "標記點" : "標記圈";
+    if (vv) text(who + "晚了約 " + (MK * A / vv).toFixed(2) + " 秒才開始動（波要花時間傳過去）", gx + 6, gy + gh - 8, C.dim, 14);
+    else text("繩子推不出縱波：標記點不會規律地前後振動", gx + 6, gy + gh - 8, C.dim, 14);
   }
 
   function mix(a, b, t) {
@@ -377,9 +432,12 @@ if (!isPhone) (function () {
     var live = now - acc.t < 300;
     accShow = live ? (S.mode === "L" ? Math.abs(acc.x) : S.mode === "T" ? Math.abs(acc.y) : Math.hypot(acc.x, acc.y)) : 0;
     document.getElementById("sAcc").textContent = accShow.toFixed(1);
-    var f = freq(), v = S.mode === "L" ? VL : S.mode === "T" ? VT : null;
+    var rope = S.med === "rope", f = freq(), v = S.mode === "L" ? vL() : S.mode === "T" ? vT() : null;
     document.getElementById("sF").textContent = f ? f.toFixed(1) + " Hz" : "—";
-    document.getElementById("sV").textContent = v ? v.toFixed(1) + " m/s" : "橫 " + VT.toFixed(1) + "／縱 " + VL.toFixed(1);
+    document.getElementById("sV").textContent = v ? v.toFixed(1) + " m/s"
+      : rope ? (S.mode === "L" ? "沒有縱波" : "橫 " + vT().toFixed(1)) : "橫 " + VT.toFixed(1) + "／縱 " + VL.toFixed(1);
+    document.getElementById("sVn").textContent = rope ? "由繩子拉多緊決定，甩快甩慢都不變" : "由彈簧決定，甩快甩慢都不變";
+    document.getElementById("sMkT").textContent = rope ? "標記點（黃色）" : "標記圈（黃色）";
     document.getElementById("sL").textContent = f && v ? (v / f).toFixed(2) + " m" : "—";
   }
 
@@ -414,6 +472,13 @@ if (!isPhone) (function () {
     S.mode = b.dataset.m; document.querySelectorAll(".mode").forEach(function (x) { x.classList.toggle("sel", x === b); }); reset(); sendMode(); }); });
   document.querySelectorAll(".end").forEach(function (b) { b.addEventListener("click", function () {
     S.end = b.dataset.e; document.querySelectorAll(".end").forEach(function (x) { x.classList.toggle("sel", x === b); }); reset(); }); });
+  var ten = document.getElementById("ten"), tenV = document.getElementById("tenV");
+  function showTen() { tenV.textContent = "拉力 " + ropeT().toFixed(2) + " N"; }
+  ten.addEventListener("input", function () { S.ten = +ten.value; showTen(); }); // 不重置：繩子當場變緊或變鬆，波速跟著變
+  showTen();
+  document.querySelectorAll(".med").forEach(function (b) { b.addEventListener("click", function () {
+    S.med = b.dataset.d; document.querySelectorAll(".med").forEach(function (x) { x.classList.toggle("sel", x === b); });
+    document.getElementById("tenG").classList.toggle("hide", S.med !== "rope"); reset(); }); });
   var sens = document.getElementById("sens");
   sens.addEventListener("input", function () { S.sens = +sens.value; document.getElementById("sensV").textContent = sens.value; });
   document.getElementById("bSlow").addEventListener("click", function () { S.slow = !S.slow; this.classList.toggle("sel", S.slow); });
@@ -471,7 +536,7 @@ if (!isPhone) (function () {
   }
 
   resize(); openRoom(0); requestAnimationFrame(loop);
-  window.__spring = { S: S, acc: acc, hand: hand, get simT() { return simT; }, px: function () { return px; }, py: function () { return py; }, VL: VL, VT: VT, freq: freq };
+  window.__spring = { step: function (sec) { for (var k = 0; k < sec * 1200; k++) { stepPhysics(1 / 1200); trackFreq(); } }, ropeV: ropeV, S: S, acc: acc, get hand() { return hand; }, get simT() { return simT; }, px: function () { return px; }, py: function () { return py; }, VL: VL, VT: VT, freq: freq };
 })();
 </script>
 </body>
