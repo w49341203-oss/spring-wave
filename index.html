@@ -66,7 +66,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 <div id="disp" class="hide">
   <header>
     <h1>彈簧波動：甩手機看橫波與縱波</h1>
-    <span class="ver">v1.0</span>
+    <span class="ver">v1.1</span>
     <span id="conn" class="pill off">手機未連線</span>
     <span class="sp"></span>
     <button class="btn" id="bQR">手機連線</button>
@@ -102,26 +102,27 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 <!-- ================= 手機頁 ================= -->
 <div id="phone" class="hide">
-  <h1>彈簧波動｜手機搖桿 <span class="ver">v1.0</span></h1>
+  <h1>彈簧波動｜手機搖桿 <span class="ver">v1.1</span></h1>
   <div id="pstat" class="pill off">尚未連線</div>
   <div class="row"><label for="pcode">配對代碼</label><input id="pcode" inputmode="numeric" maxlength="4"></div>
   <button class="big" id="pgo">開始</button>
   <div id="pmode">投影模式：—</div>
   <div class="howto">
-    手機<b>直拿</b>、螢幕朝向自己，想像彈簧從手機往<b>右邊</b>延伸：<br>
+    像<b>握繩子的一端</b>一樣把手機握在拳頭裡，<b>手機頂端朝向彈簧</b>（朝前），螢幕朝上或朝側邊都可以：<br>
     ・<b>上下甩</b> → 橫波（彈簧上下擺）<br>
-    ・<b>左右推拉</b> → 縱波（彈簧一疏一密）<br>
+    ・<b>往前推、往後拉</b> → 縱波（彈簧一疏一密）<br>
     甩快一點，看投影上的波長怎麼變。
   </div>
-  <div class="meter"><span>左右（縱波）</span><div class="track"><div class="mid"></div><div class="fill" id="mx"></div></div><span id="vx">0.0</span></div>
+  <div id="grip" class="pill off">握法：等待感測器…</div>
+  <div class="meter"><span>前後（縱波）</span><div class="track"><div class="mid"></div><div class="fill" id="mx"></div></div><span id="vx">0.0</span></div>
   <div class="meter"><span>上下（橫波）</span><div class="track"><div class="mid"></div><div class="fill" id="my"></div></div><span id="vy">0.0</span></div>
-  <div class="meter"><span>前後</span><div class="track"><div class="mid"></div><div class="fill" id="mz"></div></div><span id="vz">0.0</span></div>
+  <div class="meter"><span>左右</span><div class="track"><div class="mid"></div><div class="fill" id="mz"></div></div><span id="vz">0.0</span></div>
   <p class="ver" id="pinfo">使用手機的加速度計與陀螺儀（Android 會自動扣除重力）。甩的時候請握緊手機。</p>
 </div>
 
 <script>
 "use strict";
-var VERSION = "v1.0";
+var VERSION = "v1.1";
 var PREFIX = "hhspring-wave-";
 var qs = new URLSearchParams(location.search);
 var isPhone = qs.has("p");
@@ -141,18 +142,34 @@ if (isPhone) (function () {
     el.style.left = (f < 0 ? 50 + f * 50 : 50) + "%"; el.style.width = Math.abs(f) * 50 + "%";
     document.getElementById(vid).textContent = v.toFixed(1);
   }
+  // 握繩子握法：用重力找出「上」，手機頂端（y 軸）的水平方向就是「前」（朝向彈簧）
+  function dot(p, q) { return p[0] * q[0] + p[1] * q[1] + p[2] * q[2]; }
+  function norm(p) { var n = Math.sqrt(dot(p, p)) || 1; return [p[0] / n, p[1] / n, p[2] / n]; }
+  var gripOK = null;
   function onMotion(e) {
-    var a = e.acceleration, ax, ay, az;
-    if (a && a.x != null) { ax = a.x; ay = a.y; az = a.z; }
-    else { // 沒有「去重力」加速度的手機：自己用低通濾波估計重力再扣掉
-      var b = e.accelerationIncludingGravity; if (!b || b.x == null) return;
+    var b = e.accelerationIncludingGravity, a = e.acceleration, lin;
+    if (!b || b.x == null) return;
+    if (a && a.x != null) { lin = [a.x, a.y, a.z]; g = [b.x - a.x, b.y - a.y, b.z - a.z]; }
+    else { // 沒有「去重力」加速度的手機：用低通濾波估計重力再扣掉
       g[0] += (b.x - g[0]) * 0.05; g[1] += (b.y - g[1]) * 0.05; g[2] += (b.z - g[2]) * 0.05;
-      ax = b.x - g[0]; ay = b.y - g[1]; az = b.z - g[2];
+      lin = [b.x - g[0], b.y - g[1], b.z - g[2]];
     }
+    var up = norm(g);                                   // 靜止時讀數指向「上」
+    var ey = [0, 1, 0], k = dot(ey, up);
+    var fw = [ey[0] - k * up[0], ey[1] - k * up[1], ey[2] - k * up[2]];
+    var flat = Math.sqrt(dot(fw, fw));                  // 手機頂端有多「平」：直立時接近 0
+    fw = norm(fw);
+    var side = [up[1] * fw[2] - up[2] * fw[1], up[2] * fw[0] - up[0] * fw[2], up[0] * fw[1] - up[1] * fw[0]];
+    var aL = dot(lin, fw), aT = dot(lin, up), aS = dot(lin, side);
+    var ok = flat > 0.5;                                // 頂端跟水平夾角 < 60° 才算握對
+    if (!ok) aL = 0;
+    if (ok !== gripOK) { gripOK = ok; var gp = document.getElementById("grip");
+      gp.textContent = ok ? "握法正確 ✔" : "請把手機放平一點，頂端朝向彈簧"; gp.className = "pill " + (ok ? "on" : "off"); }
     var r = e.rotationRate || {};
-    if (conn && conn.open) conn.send({ a: [ax, ay, az], r: [r.alpha || 0, r.beta || 0, r.gamma || 0] });
+    // 傳給投影頁：a[0]＝沿彈簧（縱波），a[1]＝上下（橫波）
+    if (conn && conn.open) conn.send({ a: [aL, aT, aS], r: [r.alpha || 0, r.beta || 0, r.gamma || 0] });
     var now = performance.now();
-    if (now - last > 60) { last = now; bar("mx", "vx", ax); bar("my", "vy", ay); bar("mz", "vz", az); }
+    if (now - last > 60) { last = now; bar("mx", "vx", aL); bar("my", "vy", aT); bar("mz", "vz", aS); }
   }
   var retries = 0;
   function retry() { if (conn && conn.open) return; if (retries++ < 20) connect(); else stat("連不上，請按「開始」重試", false); }
@@ -436,7 +453,7 @@ if (!isPhone) (function () {
       dconn = c;
       c.on("open", function () { setConn(true, "手機已連線 ✔"); pair.classList.add("hide"); sendMode(); });
       c.on("data", function (d) { if (d && d.a) {
-        // 手機直拿：手機的 x（左右）→ 沿彈簧方向（縱波）；手機的 y（上下）→ 垂直彈簧（橫波）
+        // 手機端已換算好：a[0]＝沿彈簧方向（縱波）、a[1]＝上下（橫波）
         acc.x = +d.a[0] || 0; acc.y = +d.a[1] || 0; acc.t = performance.now(); } });
       c.on("close", function () { setConn(false, "手機已斷線"); });
     });
