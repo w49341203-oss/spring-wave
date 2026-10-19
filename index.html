@@ -64,6 +64,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .howto{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:16px;line-height:1.7}
 .howto b{color:var(--yellow)}
 #pmode{font-size:18px}
+.copy{position:fixed;right:10px;bottom:4px;font-size:12px;color:var(--dim);opacity:.45;pointer-events:none;z-index:3}
+#phone .copy{position:static;text-align:center;margin-top:auto}
 </style>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -75,7 +77,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   <header>
     <h1>彈簧與繩子的波動：甩手機看橫波與縱波</h1>
     <span class="lvltag hide" id="hsTag">高中版</span>
-    <span class="ver">v1.4</span>
+    <span class="ver">v1.5</span>
     <span id="conn" class="pill off">手機未連線</span>
     <span class="sp"></span>
     <button class="btn" id="bQR">手機連線</button>
@@ -110,6 +112,7 @@ button{font:inherit;color:inherit;cursor:pointer}
         <p id="pairInfo">手機掃 QR Code，或開啟本網址輸入上面的代碼，按「開始」。</p>
       </div>
       <div id="msg"></div>
+      <div class="copy">© 2026 蕭妤真 版權所有</div>
     </div>
     <div id="stats">
       <div class="card jhCard"><b>手機加速度</b><span id="sAcc">0.0</span><small>m/s²（已扣除重力）</small></div>
@@ -126,7 +129,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 <!-- ================= 手機頁 ================= -->
 <div id="phone" class="hide">
-  <h1>彈簧波動｜手機搖桿 <span class="ver">v1.4</span></h1>
+  <h1>彈簧波動｜手機搖桿 <span class="ver">v1.5</span></h1>
   <div id="pstat" class="pill off">尚未連線</div>
   <div class="row"><label for="pcode">配對代碼</label><input id="pcode" inputmode="numeric" maxlength="4"></div>
   <button class="big" id="pgo">開始</button>
@@ -144,11 +147,12 @@ button{font:inherit;color:inherit;cursor:pointer}
   <div class="meter"><span>上下（橫波）</span><div class="track"><div class="mid"></div><div class="fill" id="my"></div></div><span id="vy">0.0</span></div>
   <div class="meter"><span>左右</span><div class="track"><div class="mid"></div><div class="fill" id="mz"></div></div><span id="vz">0.0</span></div>
   <p class="ver" id="pinfo">使用手機的加速度計與陀螺儀（Android 會自動扣除重力）。甩的時候請握緊手機。</p>
+  <div class="copy">© 2026 蕭妤真 版權所有</div>
 </div>
 
 <script>
 "use strict";
-var VERSION = "v1.4";
+var VERSION = "v1.5";
 var PREFIX = "hhspring-wave-";
 var qs = new URLSearchParams(location.search);
 var isPhone = qs.has("p");
