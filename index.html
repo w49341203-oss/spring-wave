@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>彈簧波動｜甩手機看橫波與縱波</title>
+<style>
+:root{--bg:#0b0f19;--panel:#141b2b;--line:#2a3550;--fg:#e8edf6;--dim:#93a0b8;
+  --blue:#58C4DD;--teal:#5CD0B3;--green:#83C167;--yellow:#FFFF00;--gold:#F0AC5F;--red:#FC6255;--purple:#9A72AC}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}
+.hide{display:none!important}
+/* ---------- 投影頁 ---------- */
+#disp{display:flex;flex-direction:column;height:100%}
+#disp header{display:flex;align-items:center;gap:12px;padding:8px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+#disp h1{font-size:clamp(18px,2.4vw,28px);margin:0;font-weight:700}
+.ver{font-size:13px;color:var(--dim)}
+.pill{font-size:15px;padding:3px 12px;border-radius:99px;border:1px solid var(--line);white-space:nowrap}
+.pill.on{border-color:var(--green);color:var(--green)}
+.pill.off{color:var(--gold);border-color:var(--gold)}
+.sp{flex:1}
+.btn{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 14px;font-size:16px}
+.btn.sel{background:var(--blue);color:#0b0f19;border-color:var(--blue);font-weight:700}
+#bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line)}
+#bar .grp{display:flex;gap:6px;align-items:center}
+#bar label{font-size:15px;color:var(--dim)}
+#bar input[type=range]{width:140px}
+#main{flex:1;display:flex;min-height:0}
+#stage{flex:1;position:relative;min-width:0}
+#cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#stats{width:250px;border-left:1px solid var(--line);padding:10px;display:flex;flex-direction:column;gap:8px;overflow:auto}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+.card b{display:block;font-size:14px;color:var(--dim);font-weight:500}
+.card span{font-size:clamp(22px,2.6vw,32px);font-weight:700;font-variant-numeric:tabular-nums}
+.card small{display:block;font-size:13px;color:var(--dim)}
+#pair{position:absolute;top:12px;right:12px;background:#fff;color:#111;border-radius:12px;padding:12px;width:250px;box-shadow:0 6px 30px #0008;z-index:2}
+#pair h3{margin:0 0 6px;font-size:17px}
+#pair .code{font-size:30px;font-weight:700;letter-spacing:.15em;text-align:center}
+#pair p{margin:6px 0 0;font-size:13px;line-height:1.5}
+#pair .warn{color:#b4442f;font-weight:700}
+#qr{display:flex;justify-content:center;margin:4px 0}
+#pair .x{position:absolute;top:6px;right:8px;background:none;border:0;font-size:20px;color:#666}
+#msg{position:absolute;left:12px;bottom:12px;right:12px;font-size:15px;color:var(--gold);pointer-events:none}
+@media (max-width:820px){#main{flex-direction:column}#stats{width:auto;border-left:0;border-top:1px solid var(--line);flex-direction:row;flex-wrap:wrap}#stats .card{flex:1 1 140px}#stage{min-height:55vh}}
+/* ---------- 手機頁 ---------- */
+#phone{max-width:520px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:14px;min-height:100%}
+#phone h1{font-size:22px;margin:0}
+#phone .big{font-size:20px;padding:16px;border-radius:12px;background:var(--blue);color:#0b0f19;border:0;font-weight:700}
+#phone .row{display:flex;gap:8px;align-items:center}
+#phone input{font-size:22px;width:120px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg);letter-spacing:.15em}
+.meter{display:grid;grid-template-columns:110px 1fr 70px;gap:8px;align-items:center;font-size:15px}
+.meter .track{height:18px;background:var(--panel);border-radius:9px;position:relative;overflow:hidden;border:1px solid var(--line)}
+.meter .fill{position:absolute;top:0;bottom:0;left:50%;background:var(--teal)}
+.meter .mid{position:absolute;top:0;bottom:0;left:50%;width:1px;background:var(--dim)}
+.howto{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:16px;line-height:1.7}
+.howto b{color:var(--yellow)}
+#pmode{font-size:18px}
+</style>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+<!-- ================= 投影頁 ================= -->
+<div id="disp" class="hide">
+  <header>
+    <h1>彈簧波動：甩手機看橫波與縱波</h1>
+    <span class="ver">v1.0</span>
+    <span id="conn" class="pill off">手機未連線</span>
+    <span class="sp"></span>
+    <button class="btn" id="bQR">手機連線</button>
+    <button class="btn" id="bFS">全螢幕</button>
+  </header>
+  <div id="bar">
+    <div class="grp"><button class="btn mode sel" data-m="T">橫波</button><button class="btn mode" data-m="L">縱波</button><button class="btn mode" data-m="F">自由甩</button></div>
+    <div class="grp"><button class="btn end sel" data-e="free">右端：很長（不反射）</button><button class="btn end" data-e="fixed">右端：固定在牆上</button></div>
+    <div class="grp"><label for="sens">靈敏度</label><input type="range" id="sens" min="0.5" max="5" step="0.5" value="2"><span id="sensV">2</span></div>
+    <div class="grp"><button class="btn" id="bSlow">慢動作</button><button class="btn" id="bPause">暫停</button><button class="btn" id="bReset">重置</button></div>
+  </div>
+  <div id="main">
+    <div id="stage">
+      <canvas id="cv"></canvas>
+      <div id="pair">
+        <button class="x" id="pairX" aria-label="收起">×</button>
+        <h3>用手機掃描連線</h3>
+        <div id="qr"></div>
+        <div class="code" id="code">----</div>
+        <p id="pairInfo">手機掃 QR Code，或開啟本網址輸入上面的代碼，按「開始」。</p>
+      </div>
+      <div id="msg"></div>
+    </div>
+    <div id="stats">
+      <div class="card"><b>手機加速度</b><span id="sAcc">0.0</span><small>m/s²（已扣除重力）</small></div>
+      <div class="card"><b>手的振動頻率 f</b><span id="sF">—</span><small>每秒來回幾次（Hz）</small></div>
+      <div class="card"><b>波速 v</b><span id="sV">—</span><small>由彈簧決定，甩快甩慢都不變</small></div>
+      <div class="card"><b>波長 λ ＝ v ÷ f</b><span id="sL">—</span><small>甩得越快（f 大），波長越短</small></div>
+      <div class="card"><b>標記圈（黃色）</b><small id="sMk">只在原位附近來回振動，不會跟著波往前走</small></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 手機頁 ================= -->
+<div id="phone" class="hide">
+  <h1>彈簧波動｜手機搖桿 <span class="ver">v1.0</span></h1>
+  <div id="pstat" class="pill off">尚未連線</div>
+  <div class="row"><label for="pcode">配對代碼</label><input id="pcode" inputmode="numeric" maxlength="4"></div>
+  <button class="big" id="pgo">開始</button>
+  <div id="pmode">投影模式：—</div>
+  <div class="howto">
+    手機<b>直拿</b>、螢幕朝向自己，想像彈簧從手機往<b>右邊</b>延伸：<br>
+    ・<b>上下甩</b> → 橫波（彈簧上下擺）<br>
+    ・<b>左右推拉</b> → 縱波（彈簧一疏一密）<br>
+    甩快一點，看投影上的波長怎麼變。
+  </div>
+  <div class="meter"><span>左右（縱波）</span><div class="track"><div class="mid"></div><div class="fill" id="mx"></div></div><span id="vx">0.0</span></div>
+  <div class="meter"><span>上下（橫波）</span><div class="track"><div class="mid"></div><div class="fill" id="my"></div></div><span id="vy">0.0</span></div>
+  <div class="meter"><span>前後</span><div class="track"><div class="mid"></div><div class="fill" id="mz"></div></div><span id="vz">0.0</span></div>
+  <p class="ver" id="pinfo">使用手機的加速度計與陀螺儀（Android 會自動扣除重力）。甩的時候請握緊手機。</p>
+</div>
+
+<script>
+"use strict";
+var VERSION = "v1.0";
+var PREFIX = "hhspring-wave-";
+var qs = new URLSearchParams(location.search);
+var isPhone = qs.has("p");
+
+/* ============================================================
+   手機端：讀感測器 → 傳給投影頁
+   ============================================================ */
+if (isPhone) (function () {
+  document.getElementById("phone").classList.remove("hide");
+  var pcode = document.getElementById("pcode"), pstat = document.getElementById("pstat");
+  pcode.value = (qs.get("p") || "").replace(/\D/g, "").slice(0, 4);
+  var conn = null, peer = null, started = false, g = [0, 0, 0], wake = null, last = 0;
+  function stat(t, ok) { pstat.textContent = t; pstat.className = "pill " + (ok ? "on" : "off"); }
+  function bar(id, vid, v) {
+    var f = Math.max(-1, Math.min(1, v / 15));
+    var el = document.getElementById(id);
+    el.style.left = (f < 0 ? 50 + f * 50 : 50) + "%"; el.style.width = Math.abs(f) * 50 + "%";
+    document.getElementById(vid).textContent = v.toFixed(1);
+  }
+  function onMotion(e) {
+    var a = e.acceleration, ax, ay, az;
+    if (a && a.x != null) { ax = a.x; ay = a.y; az = a.z; }
+    else { // 沒有「去重力」加速度的手機：自己用低通濾波估計重力再扣掉
+      var b = e.accelerationIncludingGravity; if (!b || b.x == null) return;
+      g[0] += (b.x - g[0]) * 0.05; g[1] += (b.y - g[1]) * 0.05; g[2] += (b.z - g[2]) * 0.05;
+      ax = b.x - g[0]; ay = b.y - g[1]; az = b.z - g[2];
+    }
+    var r = e.rotationRate || {};
+    if (conn && conn.open) conn.send({ a: [ax, ay, az], r: [r.alpha || 0, r.beta || 0, r.gamma || 0] });
+    var now = performance.now();
+    if (now - last > 60) { last = now; bar("mx", "vx", ax); bar("my", "vy", ay); bar("mz", "vz", az); }
+  }
+  var retries = 0;
+  function retry() { if (conn && conn.open) return; if (retries++ < 20) connect(); else stat("連不上，請按「開始」重試", false); }
+  function connect() {
+    var code = pcode.value.replace(/\D/g, "");
+    if (code.length !== 4) { stat("請輸入 4 位數代碼", false); return; }
+    if (peer) try { peer.destroy(); } catch (e) {}
+    stat("連線中…", false);
+    peer = new Peer();
+    var timer = setTimeout(function () { if (!(conn && conn.open)) stat("連不上：確認代碼、或手機和筆電換同一個網路再試", false); }, 12000);
+    peer.on("open", function () {
+      conn = peer.connect(PREFIX + code, { serialization: "json", reliable: false });
+      conn.on("open", function () { clearTimeout(timer); retries = 0; stat("已連線 ✔ 開始甩吧", true); });
+      conn.on("data", function (d) { if (d && d.mode) document.getElementById("pmode").textContent = "投影模式：" + d.mode; });
+      conn.on("close", function () { stat("連線中斷，自動重連中…", false); setTimeout(retry, 3000); });
+    });
+    peer.on("error", function (e) {
+      clearTimeout(timer);
+      stat(e.type === "peer-unavailable" ? "找不到這個代碼，等投影頁開好後自動重試…" : "連線錯誤：" + e.type + "，自動重試中…", false);
+      if (retries < 20) setTimeout(retry, 3000);
+    });
+  }
+  document.getElementById("pgo").addEventListener("click", function () {
+    retries = 0;
+    var go = function () {
+      if (!started) { window.addEventListener("devicemotion", onMotion); started = true; }
+      if (navigator.wakeLock) navigator.wakeLock.request("screen").then(function (w) { wake = w; }).catch(function () {});
+      connect();
+    };
+    if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === "function") {
+      // iPhone 一定要問；有些 Chrome 也有這個函式但會拒絕，這時照樣開始（Android 本來就不用權限）
+      DeviceMotionEvent.requestPermission().then(go, go);
+    } else go();
+  });
+  if (!window.DeviceMotionEvent) stat("這台裝置沒有動作感測器", false);
+  if (location.protocol !== "https:") document.getElementById("pinfo").textContent = "⚠ 手機感測器只能在 https 網址使用，請開啟上傳到 GitHub Pages 的版本。";
+})();
+
+/* ============================================================
+   投影端：彈簧物理＋畫面＋接收手機資料
+   ============================================================ */
+if (!isPhone) (function () {
+  document.getElementById("disp").classList.remove("hide");
+  var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+  var C = { blue: "#58C4DD", teal: "#5CD0B3", green: "#83C167", yellow: "#FFFF00", gold: "#F0AC5F", red: "#FC6255", purple: "#9A72AC", grey: "#888888", dim: "#93a0b8", line: "#2a3550" };
+
+  /* ---- 彈簧模型：一串小質點用小彈簧連起來（俯視、放在光滑桌面上，不考慮重力） ---- */
+  var L = 3, NV = 60, A = L / NV;          // 畫面上看得到的長度 3 m，分 60 圈
+  var NT = 140;                              // 實際模擬 140 圈：右邊多出來的在畫面外慢慢吸收，波就不會反射
+  var L0 = A * 0.5, M = 0.01, K = 23.04;     // 原長比間距短 → 彈簧被拉緊，才傳得了橫波
+  var VL = A * Math.sqrt(K / M);             // 縱波波速 ≈ 2.4 m/s
+  var VT = Math.sqrt(K * (A - L0) * A / M);  // 橫波波速 ≈ 1.7 m/s
+  var MK = 20;                               // 黃色標記圈：距手 1 m
+  var px, py, vx, vy, damp;
+  var S = { mode: "T", end: "free", sens: 2, slow: false, paused: false };
+  var hand = { x: 0, y: 0, vx: 0, vy: 0 }, acc = { x: 0, y: 0, t: -1e9 }, drag = null;
+  var hist = [], simT = 0, cross = [], lastSign = 0, accShow = 0;
+
+  function reset() {
+    px = new Float64Array(NT + 1); py = new Float64Array(NT + 1); vx = new Float64Array(NT + 1); vy = new Float64Array(NT + 1);
+    damp = new Float64Array(NT + 1);
+    for (var i = 0; i <= NT; i++) { px[i] = i * A; damp[i] = 0.05; }
+    for (i = NV + 5; i <= NT; i++) { var q = (i - NV - 5) / (NT - NV - 5); damp[i] = 0.05 + 60 * q * q; }
+    hand = { x: 0, y: 0, vx: 0, vy: 0 }; hist = []; cross = []; simT = 0;
+  }
+  reset();
+
+  function lastIndex() { return S.end === "fixed" ? NV : NT; }
+
+  function stepPhysics(h) {
+    // 1) 手的位置：手機加速度推動「手」，再用一個很弱的彈簧把手拉回中間（避免漂走）
+    var w0 = 2 * Math.PI * 0.45, z = 0.9, live = performance.now() - acc.t < 300;
+    var ax = live ? acc.x * S.sens : 0, ay = live ? acc.y * S.sens : 0;
+    if (drag) { hand.vx = (drag.x - hand.x) / 0.05; hand.vy = (drag.y - hand.y) / 0.05; }
+    else {
+      hand.vx += (ax - w0 * w0 * hand.x - 2 * z * w0 * hand.vx) * h;
+      hand.vy += (ay - w0 * w0 * hand.y - 2 * z * w0 * hand.vy) * h;
+    }
+    hand.x += hand.vx * h; hand.y += hand.vy * h;
+    if (S.mode === "T") { hand.x = 0; hand.vx = 0; }
+    if (S.mode === "L") { hand.y = 0; hand.vy = 0; }
+    hand.x = Math.max(-0.1, Math.min(0.1, hand.x));
+    hand.y = Math.max(-0.4, Math.min(0.4, hand.y));
+    px[0] = hand.x; py[0] = hand.y;
+    // 2) 每一小段彈簧的拉力
+    var n = lastIndex(), fx = new Float64Array(n + 1), fy = new Float64Array(n + 1);
+    for (var i = 0; i < n; i++) {
+      var dx = px[i + 1] - px[i], dy = py[i + 1] - py[i], len = Math.sqrt(dx * dx + dy * dy) || 1e-9;
+      var f = K * (len - L0);
+      if (len < 0.45 * A) f -= 60 * K * (0.45 * A - len);   // 圈與圈快碰在一起時的推力
+      var gx = f * dx / len, gy = f * dy / len;
+      fx[i] += gx; fy[i] += gy; fx[i + 1] -= gx; fy[i + 1] -= gy;
+    }
+    // 3) 移動每一圈（第 0 圈是手、最後一圈固定）
+    for (i = 1; i < n; i++) {
+      vx[i] += (fx[i] / M - damp[i] * vx[i]) * h; vy[i] += (fy[i] / M - damp[i] * vy[i]) * h;
+      if (S.mode === "L") vy[i] = 0;
+      px[i] += vx[i] * h; py[i] += vy[i] * h;
+      if (S.mode === "L") py[i] = 0;
+    }
+    px[n] = n * A; py[n] = 0; vx[n] = 0; vy[n] = 0;
+    simT += h;
+  }
+
+  /* ---- 頻率：數「手」往同一方向通過中點的次數 ---- */
+  function trackFreq() {
+    var d = S.mode === "L" ? hand.x : hand.y;
+    var th = S.mode === "L" ? 0.01 : 0.03, s = d > th ? 1 : d < -th ? -1 : 0;
+    if (s !== 0 && s !== lastSign) { if (s === 1 && lastSign === -1) cross.push(simT); lastSign = s; }
+    while (cross.length > 5) cross.shift();
+  }
+  function freq() {
+    if (cross.length < 2 || simT - cross[cross.length - 1] > 2.5) return 0;
+    var n = cross.length - 1; return n / (cross[cross.length - 1] - cross[0]);
+  }
+
+  /* ---- 畫面 ---- */
+  var W = 0, H = 0, dpr = 1;
+  function resize() { var r = cv.getBoundingClientRect(); dpr = Math.min(2, window.devicePixelRatio || 1); W = r.width; H = r.height; cv.width = W * dpr; cv.height = H * dpr; }
+  window.addEventListener("resize", resize);
+  function geo() {
+    var top = H * 0.62, x0 = Math.max(70, W * 0.08), sc = (W - x0 - 30) / L;
+    return { x0: x0, y0: top * 0.52, sc: Math.min(sc, top * 0.9 / 1.3), top: top };
+  }
+  function X(g, x) { return g.x0 + x * g.sc; }
+  function Y(g, y) { return g.y0 - y * g.sc; }
+  function text(t, x, y, c, sz, al) { ctx.fillStyle = c; ctx.font = (sz || 16) + 'px "Noto Sans TC","Microsoft JhengHei",sans-serif'; ctx.textAlign = al || "left"; ctx.fillText(t, x, y); }
+
+  function draw() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = "#0b0f19"; ctx.fillRect(0, 0, W, H);
+    var g = geo(), R = 0.13 * g.sc;
+    // 平衡位置虛線
+    ctx.setLineDash([6, 6]); ctx.strokeStyle = C.line; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(X(g, 0), Y(g, 0)); ctx.lineTo(X(g, L), Y(g, 0)); ctx.stroke(); ctx.setLineDash([]);
+    // 右端
+    if (S.end === "fixed") {
+      var wx = X(g, L) + 6; ctx.fillStyle = "#3a4560"; ctx.fillRect(wx, g.y0 - R * 2.2, 12, R * 4.4);
+      text("牆", wx + 6, g.y0 - R * 2.2 - 8, C.dim, 15, "center");
+    } else text("彈簧很長，往右延伸 →", X(g, L) - 4, g.y0 - R * 2.2 - 8, C.dim, 15, "right");
+    // 每一圈畫成一個環（垂直於彈簧方向），縱波時用顏色分疏密
+    for (var i = 1; i <= NV; i++) {
+      var a = Math.max(0, i - 2), b = Math.min(lastIndex(), i + 2);
+      var tx = px[b] - px[a], ty = py[b] - py[a], tl = Math.sqrt(tx * tx + ty * ty) || 1e-9;
+      var sp = tl / ((b - a) * A); // 1＝原本間距；<1 密、>1 疏
+      var col = C.teal;
+      if (S.mode !== "T") { var k = Math.max(-1, Math.min(1, (1 - sp) * 2.2)); col = k > 0 ? mix(C.teal, C.red, k) : mix(C.teal, C.blue, -k); }
+      var ang = Math.atan2(-ty, tx);
+      ctx.save(); ctx.translate(X(g, px[i]), Y(g, py[i])); ctx.rotate(ang);
+      ctx.strokeStyle = i === MK ? C.yellow : col; ctx.lineWidth = i === MK ? 4 : 2.2;
+      if (i === MK) { ctx.shadowColor = C.yellow; ctx.shadowBlur = 14; }
+      ctx.beginPath(); ctx.ellipse(0, 0, Math.max(2, R * 0.16), R, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
+    // 標記圈的平衡位置
+    var mx = X(g, MK * A), my = Y(g, 0);
+    ctx.strokeStyle = C.yellow; ctx.globalAlpha = 0.5; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(mx, my + R * 1.6); ctx.lineTo(mx, my + R * 2.0); ctx.stroke(); ctx.globalAlpha = 1;
+    text("標記圈原位", mx, my + R * 2.0 + 18, C.yellow, 14, "center");
+    // 手
+    var hx = X(g, px[0]), hy = Y(g, py[0]);
+    ctx.fillStyle = "#c9d3e6"; ctx.beginPath(); ctx.roundRect(hx - 22, hy - R * 0.9, 18, R * 1.8, 6); ctx.fill();
+    text("手", hx - 13, hy - R - 10, "#c9d3e6", 16, "center");
+    // 圖例
+    if (S.mode !== "T") { text("■ 密部", 14, 24, C.red, 16); text("■ 疏部", 90, 24, C.blue, 16); }
+    text(S.mode === "T" ? "橫波：振動方向 ⟂ 波前進方向" : S.mode === "L" ? "縱波：振動方向 ∥ 波前進方向" : "自由甩：上下＝橫波、左右＝縱波", W - 14, 24, C.gold, 17, "right");
+    drawGraph(g);
+  }
+
+  function drawGraph(g) {
+    var gx = 60, gy = g.top + 22, gw = W - gx - 20, gh = H - gy - 26;
+    if (gh < 60) return;
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.strokeRect(gx, gy, gw, gh);
+    ctx.beginPath(); ctx.moveTo(gx, gy + gh / 2); ctx.lineTo(gx + gw, gy + gh / 2); ctx.stroke();
+    var useX = S.mode === "L";
+    text(useX ? "位移（左右）" : "位移（上下）", gx + 6, gy + 18, C.dim, 14);
+    text("時間 →（最近 6 秒）", gx + gw - 6, gy + gh + 18, C.dim, 14, "right");
+    text("— 手", gx + gw - 200, gy + 18, "#c9d3e6", 14); text("— 標記圈（距手 1 m）", gx + gw - 150, gy + 18, C.yellow, 14);
+    var amp = useX ? 0.12 : 0.45, span = 6, tNow = simT;
+    function line(key, col, w) {
+      ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath();
+      for (var j = 0; j < hist.length; j++) {
+        var p = hist[j], x = gx + gw - (tNow - p.t) / span * gw, v = useX ? p[key + "x"] : p[key + "y"];
+        var y = gy + gh / 2 - Math.max(-1, Math.min(1, v / amp)) * (gh / 2 - 6);
+        if (j === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    ctx.save(); ctx.beginPath(); ctx.rect(gx, gy, gw, gh); ctx.clip();
+    line("h", "#c9d3e6", 1.5); line("m", C.yellow, 2.5);
+    ctx.restore();
+    var lag = MK * A / (useX ? VL : VT);
+    text("標記圈晚了約 " + lag.toFixed(2) + " 秒才開始動（波要花時間傳過去）", gx + 6, gy + gh - 8, C.dim, 14);
+  }
+
+  function mix(a, b, t) {
+    var A_ = [1, 3, 5].map(function (i) { return parseInt(a.substr(i, 2), 16); }), B_ = [1, 3, 5].map(function (i) { return parseInt(b.substr(i, 2), 16); });
+    return "rgb(" + A_.map(function (v, i) { return Math.round(v + (B_[i] - v) * t); }).join(",") + ")";
+  }
+
+  /* ---- 數值面板 ---- */
+  var lastUI = 0;
+  function ui() {
+    var now = performance.now(); if (now - lastUI < 200) return; lastUI = now;
+    var live = now - acc.t < 300;
+    accShow = live ? (S.mode === "L" ? Math.abs(acc.x) : S.mode === "T" ? Math.abs(acc.y) : Math.hypot(acc.x, acc.y)) : 0;
+    document.getElementById("sAcc").textContent = accShow.toFixed(1);
+    var f = freq(), v = S.mode === "L" ? VL : S.mode === "T" ? VT : null;
+    document.getElementById("sF").textContent = f ? f.toFixed(1) + " Hz" : "—";
+    document.getElementById("sV").textContent = v ? v.toFixed(1) + " m/s" : "橫 " + VT.toFixed(1) + "／縱 " + VL.toFixed(1);
+    document.getElementById("sL").textContent = f && v ? (v / f).toFixed(2) + " m" : "—";
+  }
+
+  /* ---- 主迴圈 ---- */
+  var prev = performance.now(), recT = 0;
+  function loop(now) {
+    var dt = Math.min(0.05, (now - prev) / 1000); prev = now;
+    if (!S.paused) {
+      var sim = dt * (S.slow ? 0.25 : 1), h = 1 / 1200, n = Math.max(1, Math.round(sim / h));
+      for (var i = 0; i < n; i++) { stepPhysics(sim / n); trackFreq(); }
+      recT += sim;
+      if (recT > 1 / 60) { recT = 0; hist.push({ t: simT, hx: px[0], hy: py[0], mx: px[MK] - MK * A, my: py[MK] }); while (hist.length && simT - hist[0].t > 6.2) hist.shift(); }
+    }
+    draw(); ui();
+    requestAnimationFrame(loop);
+  }
+
+  /* ---- 滑鼠／觸控：沒有手機時，直接拖「手」也能操作 ---- */
+  function ptr(e) {
+    var r = cv.getBoundingClientRect(), g = geo();
+    return { x: (e.clientX - r.left - g.x0) / g.sc, y: -(e.clientY - r.top - g.y0) / g.sc };
+  }
+  cv.addEventListener("pointerdown", function (e) { var p = ptr(e); if (p.x < 0.6) { drag = p; cv.setPointerCapture(e.pointerId); } });
+  cv.addEventListener("pointermove", function (e) { if (drag) drag = ptr(e); });
+  cv.addEventListener("pointerup", function () { drag = null; });
+  cv.addEventListener("pointercancel", function () { drag = null; });
+
+  /* ---- 按鈕 ---- */
+  var MODE_NAME = { T: "橫波", L: "縱波", F: "自由甩" };
+  function sendMode() { if (dconn && dconn.open) dconn.send({ mode: MODE_NAME[S.mode] }); }
+  document.querySelectorAll(".mode").forEach(function (b) { b.addEventListener("click", function () {
+    S.mode = b.dataset.m; document.querySelectorAll(".mode").forEach(function (x) { x.classList.toggle("sel", x === b); }); reset(); sendMode(); }); });
+  document.querySelectorAll(".end").forEach(function (b) { b.addEventListener("click", function () {
+    S.end = b.dataset.e; document.querySelectorAll(".end").forEach(function (x) { x.classList.toggle("sel", x === b); }); reset(); }); });
+  var sens = document.getElementById("sens");
+  sens.addEventListener("input", function () { S.sens = +sens.value; document.getElementById("sensV").textContent = sens.value; });
+  document.getElementById("bSlow").addEventListener("click", function () { S.slow = !S.slow; this.classList.toggle("sel", S.slow); });
+  document.getElementById("bPause").addEventListener("click", function () { S.paused = !S.paused; this.textContent = S.paused ? "繼續" : "暫停"; this.classList.toggle("sel", S.paused); });
+  document.getElementById("bReset").addEventListener("click", reset);
+  document.getElementById("bFS").addEventListener("click", function () {
+    var d = document, el = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d);
+    else if (el.requestFullscreen) el.requestFullscreen().catch(function () { msg("這個瀏覽器不允許全螢幕（嵌在其他網頁裡時常見），請按 F11。"); });
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen(); else msg("這個瀏覽器不支援全螢幕，請按 F11。");
+  });
+  var pair = document.getElementById("pair");
+  document.getElementById("pairX").addEventListener("click", function () { pair.classList.add("hide"); });
+  document.getElementById("bQR").addEventListener("click", function () { pair.classList.toggle("hide"); });
+  function msg(t) { var m = document.getElementById("msg"); m.textContent = t; clearTimeout(msg.t); msg.t = setTimeout(function () { m.textContent = ""; }, 8000); }
+
+  /* ---- 連線：投影頁開一個 4 位數代碼的「房間」，手機連進來 ---- */
+  var dpeer = null, dconn = null, connEl = document.getElementById("conn");
+  function setConn(on, t) { connEl.textContent = t; connEl.className = "pill " + (on ? "on" : "off"); }
+  function savedCode() { try { return localStorage.getItem("springCode"); } catch (e) { return null; } }
+  function openRoom(tries, code) {
+    // 盡量沿用上次的代碼：投影頁重新整理後，手機不用重新掃碼
+    code = code || savedCode() || String(Math.floor(1000 + Math.random() * 9000));
+    try { localStorage.setItem("springCode", code); } catch (e) {}
+    if (typeof Peer === "undefined") { setConn(false, "連線元件載入失敗"); msg("連線元件載入失敗（可能沒有網路）。仍可用滑鼠拖曳左邊的「手」操作。"); return; }
+    dpeer = new Peer(PREFIX + code);
+    dpeer.on("open", function () {
+      document.getElementById("code").textContent = code;
+      var url = location.origin + location.pathname + "?p=" + code, q = document.getElementById("qr"); q.innerHTML = "";
+      if (window.QRCode) new QRCode(q, { text: url, width: 170, height: 170, correctLevel: QRCode.CorrectLevel.M });
+      var info = document.getElementById("pairInfo");
+      info.innerHTML = location.protocol === "https:" ? "手機掃 QR Code，按「開始」就連上了。也可以開本網址，加上 ?p=" + code + "。"
+        : '<span class="warn">⚠ 現在是電腦本機檔案，手機打不開。請上傳到 GitHub Pages 後，用 https 網址開啟投影頁。</span>';
+    });
+    dpeer.on("connection", function (c) {
+      if (dconn && dconn.open) try { dconn.close(); } catch (e) {}
+      dconn = c;
+      c.on("open", function () { setConn(true, "手機已連線 ✔"); pair.classList.add("hide"); sendMode(); });
+      c.on("data", function (d) { if (d && d.a) {
+        // 手機直拿：手機的 x（左右）→ 沿彈簧方向（縱波）；手機的 y（上下）→ 垂直彈簧（橫波）
+        acc.x = +d.a[0] || 0; acc.y = +d.a[1] || 0; acc.t = performance.now(); } });
+      c.on("close", function () { setConn(false, "手機已斷線"); });
+    });
+    dpeer.on("disconnected", function () { try { dpeer.reconnect(); } catch (e) {} });
+    dpeer.on("error", function (e) {
+      if (e.type === "unavailable-id" && tries < 8) {
+        // 剛重新整理時，舊的代碼可能還沒釋放：先用同一個代碼再試幾次，不行才換新代碼
+        dpeer.destroy();
+        var again = tries < 4 ? code : String(Math.floor(1000 + Math.random() * 9000));
+        setTimeout(function () { openRoom(tries + 1, again); }, tries < 4 ? 2500 : 0); return;
+      }
+      setConn(false, "連線服務出問題");
+      msg("連線服務錯誤（" + e.type + "）。可能是網路阻擋，請換手機熱點；或直接用滑鼠拖曳左邊的「手」操作。");
+    });
+  }
+
+  resize(); openRoom(0); requestAnimationFrame(loop);
+  window.__spring = { S: S, acc: acc, hand: hand, get simT() { return simT; }, px: function () { return px; }, py: function () { return py; }, VL: VL, VT: VT, freq: freq };
+})();
+</script>
+</body>
+</html>
