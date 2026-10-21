@@ -85,7 +85,7 @@ a.btn{text-decoration:none;display:inline-block;color:var(--fg)}
 <div id="disp" class="hide">
   <header>
     <h1>聲音分析：響度、音調、音色</h1>
-    <span class="ver">v1.1</span>
+    <span class="ver">v1.2</span>
     <span id="conn" class="pill off">手機未連線</span>
     <span class="sp"></span>
     <a class="btn" href="index.html">〰 彈簧波動</a>
@@ -98,6 +98,7 @@ a.btn{text-decoration:none;display:inline-block;color:var(--fg)}
     <div class="grp"><span class="glabel">② 比較</span><input id="nm" placeholder="名稱（例：男生）" maxlength="10"><div class="seg"><button class="btn" id="bSave">存下來比較</button><button class="btn" id="bClear">全部清除</button></div></div>
     <div class="grp"><span class="glabel">波形範圍</span><div class="seg"><button class="btn sm wz" data-v="5">5 ms</button><button class="btn sm wz sel" data-v="10">10 ms</button><button class="btn sm wz" data-v="20">20 ms</button><button class="btn sm wz" data-v="30">30 ms</button></div></div>
     <div class="grp"><span class="glabel">頻譜範圍</span><div class="seg"><button class="btn sm fz" data-v="1000">1000 Hz</button><button class="btn sm fz sel" data-v="2000">2000 Hz</button><button class="btn sm fz" data-v="4000">4000 Hz</button></div></div>
+    <div class="grp"><span class="glabel">分貝校正</span><input type="range" id="cal" min="-30" max="10" step="1" value="-15"><span id="calV" style="min-width:56px">−15 dB</span></div>
     <div class="grp"><span class="glabel">波形高度</span><div class="seg"><button class="btn sm az sel" data-v="auto">自動放大</button><button class="btn sm az" data-v="real">實際大小</button></div></div>
   </div>
   <div id="main">
@@ -119,13 +120,14 @@ a.btn{text-decoration:none;display:inline-block;color:var(--fg)}
           <li><b>響度</b>看分貝與波形的高低（振幅）；<b>音調</b>看頻率，波形越密頻率越高；<b>音色</b>看波形的形狀和頻譜上的泛音。</li>
           <li>想慢慢看：按「凍結」。想比較：在名稱欄輸入（例如「男生」），按「存下來比較」，最多 4 筆疊在一起看。</li>
           <li>「波形高度」選「實際大小」才看得出大聲、小聲的振幅差別；「自動放大」比較好看形狀。</li>
+          <li>分貝不準時調「分貝校正」：手機放在講台上，跟分貝計（或分貝計 App）同時量，把數字調到一樣；調好會記住。</li>
         </ol>
       </div>
       <div id="msg"></div>
       <div class="copy">© 2026 蕭妤真 版權所有</div>
     </div>
     <div id="stats">
-      <div class="card"><b>響度（大小聲）</b><span class="big" id="sDb">—</span><small>分貝 dB（手機估計值，可比較大小聲）</small><small id="sDbW"></small></div>
+      <div class="card"><b>響度（大小聲）</b><span class="big" id="sDb">—</span><small>分貝 dB（手機估計值）</small><small id="sDbW"></small><small>分貝跟距離有關：離手機越近，數字越大</small><small id="sMic" style="color:var(--gold)"></small></div>
       <div class="card"><b>音調（高低）</b><span class="big" id="sF">—</span><span class="note" id="sNote"></span><small>頻率越高，音調越高</small></div>
       <div class="card"><b>比較清單</b><div id="sList"><small>還沒有存任何聲音</small></div></div>
       <div class="card"><b>音色：泛音的強弱（跟基音比）</b><div id="sHarm"><small>持續發出一個音時顯示</small></div><small>形狀不同、泛音比例不同 → 音色不同</small></div>
@@ -135,7 +137,7 @@ a.btn{text-decoration:none;display:inline-block;color:var(--fg)}
 
 <!-- ================= 手機頁 ================= -->
 <div id="phone" class="hide">
-  <h1>聲音分析｜手機麥克風 <span class="ver">v1.1</span></h1>
+  <h1>聲音分析｜手機麥克風 <span class="ver">v1.2</span></h1>
   <div id="pstat" class="pill off">尚未連線</div>
   <div class="row"><label for="pcode">配對代碼</label><input id="pcode" inputmode="numeric" maxlength="4"></div>
   <button class="big" id="pgo">開始收音</button>
@@ -170,7 +172,7 @@ if (isPhone) (function () {
   document.getElementById("phone").classList.remove("hide");
   var pcode = document.getElementById("pcode"), pstat = document.getElementById("pstat");
   pcode.value = (qs.get("p") || "").replace(/\D/g, "").slice(0, 4);
-  var conn = null, peer = null, actx = null, an = null, tbuf, fbuf, timer = null, retries = 0;
+  var conn = null, peer = null, actx = null, an = null, tbuf, fbuf, timer = null, retries = 0, cal = -15, mic = null;
   function stat(t, ok) { pstat.textContent = t; pstat.className = "pill " + (ok ? "on" : "off"); }
 
   // 找音高：YIN 方法（看波形「每隔多久重複一次」），先每 2 點取 1 點加快速度
@@ -209,7 +211,7 @@ if (isPhone) (function () {
     for (i = 0; i < nb; i++) sb[i] = Math.max(0, Math.min(255, Math.round((fbuf[i] + 110) * 2.55)));
     // 壓縮成一串文字（base64），每包約 1 KB，比原本小很多
     if (conn && conn.open) conn.send({ w: b64(wb), pk: +peak.toFixed(5), wsr: sr / STEP, s: b64(sb), df: df, rms: +rms.toFixed(6), f0: +p[0].toFixed(1), cl: +p[1].toFixed(2) });
-    var db = 20 * Math.log10(Math.max(rms, 1e-7)) + 100;
+    var db = 20 * Math.log10(Math.max(rms, 1e-7)) + 100 + cal;
     document.getElementById("plv").style.width = Math.max(0, Math.min(100, (db - 20) / 90 * 100)) + "%";
     document.getElementById("pinfo2").textContent = "約 " + Math.round(db) + " dB" + (p[0] && p[1] > 0.8 ? "　" + Math.round(p[0]) + " Hz " + noteName(p[0]) : "");
   }
@@ -221,7 +223,8 @@ if (isPhone) (function () {
     peer = new Peer();
     peer.on("open", function () {
       conn = peer.connect(PREFIX + code, { serialization: "json", reliable: false });
-      conn.on("open", function () { retries = 0; stat("已連線 ✔ 對著手機發出聲音", true); });
+      conn.on("open", function () { retries = 0; stat("已連線 ✔ 對著手機發出聲音", true); if (mic) conn.send({ mic: mic }); });
+      conn.on("data", function (d) { if (d && typeof d.cal === "number") cal = d.cal; });
       conn.on("close", function () { stat("連線中斷，自動重連中…", false); setTimeout(retry, 3000); });
     });
     peer.on("error", function (e) {
@@ -235,6 +238,11 @@ if (isPhone) (function () {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { stat("這個瀏覽器不能使用麥克風（要用 https 網址開啟）", false); return; }
     // 關掉手機的「自動調音量、降噪、消回音」，才量得到真正的大小聲和波形
     navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }).then(function (stream) {
+      // 檢查手機有沒有真的關掉「自動調音量」：有些手機不理會，會把小聲音放大，分貝就不準
+      var tr = stream.getAudioTracks()[0], st = tr && tr.getSettings ? tr.getSettings() : {};
+      mic = { agc: st.autoGainControl, ns: st.noiseSuppression, ec: st.echoCancellation };
+      function on(v) { return v === true ? "開 ⚠" : v === false ? "關 ✔" : "不明"; }
+      document.getElementById("pinfo").textContent = "麥克風設定：自動調音量 " + on(mic.agc) + "、降噪 " + on(mic.ns) + "、消回音 " + on(mic.ec) + "（都關掉，分貝和波形才準）";
       if (!actx) {
         actx = new (window.AudioContext || window.webkitAudioContext)();
         an = actx.createAnalyser(); an.fftSize = 4096; an.smoothingTimeConstant = 0;   // 分析時間 0.085 秒：反應快
@@ -261,7 +269,10 @@ if (!isPhone) (function () {
   var S = { frozen: false, wms: 10, fmax: 2000, auto: true };
   var cur = null, saved = [], loud = [], lastData = 0, t0 = performance.now();
 
-  function dbOf(rms) { return 20 * Math.log10(Math.max(rms, 1e-7)) + 100; }
+  // 分貝 ≈ 20 × log10(音量) ＋ 100 ＋ 校正值；校正值可在工具列調整，會記住
+  var CAL = -15;
+  try { var c0 = localStorage.getItem("soundCal"); if (c0 !== null && !isNaN(+c0)) CAL = Math.max(-30, Math.min(10, +c0)); } catch (e) {}
+  function dbOf(rms) { return 20 * Math.log10(Math.max(rms, 1e-7)) + 100 + CAL; }
   function harmonics(d) {   // 基音和 2～6 倍頻率處的強度（dB），跟基音相比
     if (!d || !d.f0 || d.cl < 0.8) return null;
     var out = [];
@@ -351,7 +362,7 @@ if (!isPhone) (function () {
     if (!cur) return;
     var db = dbOf(cur.rms);
     document.getElementById("sDb").textContent = db < 25 ? "很安靜" : Math.round(db) + " dB";
-    document.getElementById("sDbW").textContent = db < 40 ? "像悄悄話" : db < 65 ? "像平常講話" : db < 85 ? "像大聲喊叫" : "⚠ 很吵，長時間會傷耳朵";
+    document.getElementById("sDbW").textContent = db < 35 ? "很安靜（像安靜的房間）" : db < 50 ? "小聲（像輕聲說話）" : db < 65 ? "像一般講話" : db < 80 ? "大聲（像熱鬧的教室）" : "很大聲（長時間聽要小心）";
     var ok = cur.f0 && cur.cl > 0.8;
     document.getElementById("sF").textContent = ok ? Math.round(cur.f0) + " Hz" : "—";
     document.getElementById("sNote").textContent = ok ? "≈ " + noteName(cur.f0) : "";
@@ -399,6 +410,14 @@ if (!isPhone) (function () {
     else if (el.requestFullscreen) el.requestFullscreen().catch(function () { msg("這個瀏覽器不允許全螢幕，請按 F11。"); });
     else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen(); else msg("這個瀏覽器不支援全螢幕，請按 F11。");
   });
+  var calEl = document.getElementById("cal"), calV = document.getElementById("calV");
+  function showCal() { calEl.value = CAL; calV.textContent = (CAL > 0 ? "+" : CAL < 0 ? "−" : "") + Math.abs(CAL) + " dB"; }
+  calEl.addEventListener("input", function () {
+    CAL = +calEl.value; showCal();
+    try { localStorage.setItem("soundCal", CAL); } catch (e) {}
+    if (dconn && dconn.open) dconn.send({ cal: CAL });
+  });
+  showCal();
   var pair = document.getElementById("pair"), help = document.getElementById("help");
   document.getElementById("pairX").addEventListener("click", function () { pair.classList.add("hide"); });
   document.getElementById("bQR").addEventListener("click", function () { pair.classList.toggle("hide"); });
@@ -415,6 +434,7 @@ if (!isPhone) (function () {
     return out;
   }
   function onData(d) {
+    if (d && d.mic) { document.getElementById("sMic").textContent = d.mic.agc === true ? "⚠ 這支手機沒有關掉「自動調音量」，小聲音會被放大，分貝會偏高" : ""; return; }
     if (!d || !d.w || !d.s) return;
     if (typeof d.w === "string") { d.w = unb64(d.w, true); d.s = unb64(d.s, false); }
     lastData = performance.now();
@@ -437,7 +457,7 @@ if (!isPhone) (function () {
     dpeer.on("connection", function (c) {
       if (dconn && dconn.open) try { dconn.close(); } catch (e) {}
       dconn = c;
-      c.on("open", function () { setConn(true, "手機已連線 ✔"); pair.classList.add("hide"); });
+      c.on("open", function () { setConn(true, "手機已連線 ✔"); pair.classList.add("hide"); c.send({ cal: CAL }); });
       c.on("data", onData);
       c.on("close", function () { setConn(false, "手機已斷線"); });
     });
