@@ -22,7 +22,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .sp{flex:1}
 .btn{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 14px;font-size:16px}
 .btn.sel{background:var(--blue);color:#0b0f19;border-color:var(--blue);font-weight:700}
-#bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line)}
+#bar{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line)}
 #bar .grp{display:flex;gap:6px;align-items:center}
 #bar label{font-size:15px;color:var(--dim)}
 #bar input[type=range]{width:140px}
@@ -32,6 +32,21 @@ button{font:inherit;color:inherit;cursor:pointer}
 #hsbar input[type=range]{width:120px}
 #hsbar .val{font-size:15px;min-width:64px;font-variant-numeric:tabular-nums}
 .btn.sm{padding:4px 10px;font-size:15px}
+.seg{display:inline-flex}
+.seg .btn{border-radius:0;margin-left:-1px}
+.seg .btn:first-child{border-radius:8px 0 0 8px;margin-left:0}
+.seg .btn:last-child{border-radius:0 8px 8px 0}
+.glabel{font-size:14px;color:var(--gold);font-weight:700;white-space:nowrap}
+.sub{display:flex;flex-wrap:wrap;gap:14px;align-items:center;padding:6px 14px;border-bottom:1px solid var(--line);background:#0f1626}
+.sub .grp{display:flex;gap:6px;align-items:center}
+.sub label{font-size:15px;color:var(--dim)}
+.sub input[type=range]{width:120px}
+.sub .val{font-size:15px;min-width:64px;font-variant-numeric:tabular-nums}
+a.btn{text-decoration:none;display:inline-block;color:var(--fg)}
+#help{position:absolute;top:12px;left:12px;right:12px;max-width:640px;background:#141b2b;border:1px solid var(--gold);border-radius:12px;padding:14px 18px;z-index:4;font-size:16px;line-height:1.75;box-shadow:0 6px 30px #000a}
+#help h3{margin:0 0 6px;color:var(--gold)}
+#help ol{margin:0;padding-left:22px}
+#help .x{position:absolute;top:6px;right:10px;background:none;border:0;font-size:22px;color:var(--dim)}
 .lvltag{font-size:14px;padding:2px 10px;border-radius:99px;background:var(--gold);color:#0b0f19;font-weight:700}
 .card .eq{display:block;font-size:16px;font-weight:600;line-height:1.5}
 #main{flex:1;display:flex;min-height:0}
@@ -77,29 +92,36 @@ button{font:inherit;color:inherit;cursor:pointer}
   <header>
     <h1>彈簧與繩子的波動：甩手機看橫波與縱波</h1>
     <span class="lvltag hide" id="hsTag">高中版</span>
-    <span class="ver">v1.5</span>
+    <span class="ver">v1.6</span>
     <span id="conn" class="pill off">手機未連線</span>
     <span class="sp"></span>
+    <a class="btn" href="sound.html">🔊 聲音分析</a>
+    <button class="btn" id="bHelp">？說明</button>
     <button class="btn" id="bQR">手機連線</button>
     <button class="btn" id="bFS">全螢幕</button>
   </header>
   <div id="bar">
-    <div class="grp"><button class="btn lvl sel" data-l="jh">國中</button><button class="btn lvl" data-l="hs">高中</button></div>
-    <div class="grp"><button class="btn med sel" data-d="spring">彈簧</button><button class="btn med" data-d="rope">繩子</button></div>
-    <div class="grp hide" id="tenG"><label for="ten">繩子拉多緊</label><input type="range" id="ten" min="1" max="5" step="1" value="3"><span id="tenV"></span></div>
-    <div class="grp"><button class="btn mode sel" data-m="T">橫波</button><button class="btn mode" data-m="L">縱波</button><button class="btn mode" data-m="F">自由甩</button></div>
-    <div class="grp"><button class="btn end sel" data-e="free">右端：很長（不反射）</button><button class="btn end" data-e="fixed">右端：固定在牆上</button><button class="btn end hsOnly hide" data-e="ring">右端：自由端（套環）</button><button class="btn end hsOnly hide" data-e="heavy">接粗繩</button><button class="btn end hsOnly hide" data-e="light">接細繩</button></div>
-    <div class="grp"><label for="sens">靈敏度</label><input type="range" id="sens" min="0.5" max="5" step="0.5" value="2"><span id="sensV">2</span></div>
-    <div class="grp"><button class="btn" id="bSlow">慢動作</button><button class="btn" id="bPause">暫停</button><button class="btn" id="bReset">重置</button></div>
+    <div class="grp"><span class="glabel">程度</span><div class="seg"><button class="btn lvl sel" data-l="jh">國中</button><button class="btn lvl" data-l="hs">高中</button></div></div>
+    <div class="grp"><span class="glabel">① 材料</span><div class="seg"><button class="btn med sel" data-d="spring">彈簧</button><button class="btn med" data-d="rope">繩子</button></div></div>
+    <div class="grp"><span class="glabel">② 波的種類</span><div class="seg"><button class="btn mode sel" data-m="T">橫波</button><button class="btn mode" data-m="L">縱波</button><button class="btn mode" data-m="F">自由甩</button></div></div>
+    <div class="grp"><span class="glabel">③ 右端</span><div class="seg"><button class="btn end sel" data-e="free">很長（不反射）</button><button class="btn end" data-e="fixed">固定在牆上</button><button class="btn end hsOnly hide" data-e="ring">自由端（套環）</button><button class="btn end hsOnly hide" data-e="heavy">接粗繩</button><button class="btn end hsOnly hide" data-e="light">接細繩</button></div></div>
+    <span class="sp"></span>
+    <div class="grp"><div class="seg"><button class="btn" id="bSlow">慢動作</button><button class="btn" id="bPause">暫停</button><button class="btn" id="bReset">重置</button></div></div>
   </div>
-  <div id="hsbar" class="hide">
-    <div class="grp"><label>波源</label><button class="btn sm src sel" data-s="hand">手機／手</button><button class="btn sm src" data-s="osc">振盪器</button></div>
-    <div class="grp"><label for="oF">頻率 f</label><input type="range" id="oF" min="0.1" max="4" step="0.01" value="1"><span class="val" id="oFV">1.00 Hz</span></div>
-    <div class="grp"><label for="oA">振幅</label><input type="range" id="oA" min="0.01" max="0.15" step="0.01" value="0.03"><span class="val" id="oAV">0.03 m</span></div>
-    <div class="grp" id="harmG"><label>共振</label><button class="btn sm harm" data-n="1">n=1</button><button class="btn sm harm" data-n="2">n=2</button><button class="btn sm harm" data-n="3">n=3</button><button class="btn sm harm" data-n="4">n=4</button></div>
-    <div class="grp" id="FmuG"><label for="hF">張力 F</label><input type="range" id="hF" min="0.2" max="3.2" step="0.1" value="0.8"><span class="val" id="hFV">0.8 N</span>
+  <div class="sub" id="adj">
+    <span class="glabel">調整</span>
+    <div class="grp"><label for="sens">手機靈敏度</label><input type="range" id="sens" min="0.5" max="5" step="0.5" value="2"><span id="sensV">2</span></div>
+    <div class="grp hide" id="tenG"><label for="ten">繩子拉多緊</label><input type="range" id="ten" min="1" max="5" step="1" value="3"><span id="tenV"></span></div>
+    <div class="grp hide" id="FmuG"><label for="hF">張力 F</label><input type="range" id="hF" min="0.2" max="3.2" step="0.1" value="0.8"><span class="val" id="hFV">0.8 N</span>
       <label for="hMu">線密度 μ</label><input type="range" id="hMu" min="0.05" max="0.8" step="0.05" value="0.2"><span class="val" id="hMuV">0.20 kg/m</span></div>
-    <div class="grp"><label>疊加</label><button class="btn sm pulse" data-k="1">雙脈衝：峰＋峰</button><button class="btn sm pulse" data-k="-1">雙脈衝：峰＋谷</button></div>
+  </div>
+  <div id="hsbar" class="sub hide">
+    <span class="glabel">高中實驗</span>
+    <div class="grp"><label>波源</label><div class="seg"><button class="btn sm src sel" data-s="hand">手機／滑鼠</button><button class="btn sm src" data-s="osc">振盪器</button></div></div>
+    <div class="grp hide" id="oscG"><label for="oF">頻率 f</label><input type="range" id="oF" min="0.1" max="4" step="0.01" value="1"><span class="val" id="oFV">1.00 Hz</span>
+      <label for="oA">振幅</label><input type="range" id="oA" min="0.01" max="0.15" step="0.01" value="0.03"><span class="val" id="oAV">0.03 m</span></div>
+    <div class="grp hide" id="harmG"><label>共振（駐波）</label><div class="seg"><button class="btn sm harm" data-n="1">n=1</button><button class="btn sm harm" data-n="2">n=2</button><button class="btn sm harm" data-n="3">n=3</button><button class="btn sm harm" data-n="4">n=4</button></div></div>
+    <div class="grp"><label>疊加原理</label><div class="seg"><button class="btn sm pulse" data-k="1">雙脈衝：峰＋峰</button><button class="btn sm pulse" data-k="-1">雙脈衝：峰＋谷</button></div></div>
   </div>
   <div id="main">
     <div id="stage">
@@ -112,6 +134,18 @@ button{font:inherit;color:inherit;cursor:pointer}
         <p id="pairInfo">手機掃 QR Code，或開啟本網址輸入上面的代碼，按「開始」。</p>
       </div>
       <div id="msg"></div>
+      <div id="help" class="hide">
+        <button class="x" id="helpX" aria-label="關閉">×</button>
+        <h3>怎麼用</h3>
+        <ol>
+          <li>按右上「手機連線」，手機掃 QR Code，按「開始」。沒有手機也可以用滑鼠拖左邊的「手」。</li>
+          <li>照工具列的 <b>① 材料 → ② 波的種類 → ③ 右端</b> 由左到右選好。</li>
+          <li>手機像握繩子一樣握著（頂端朝向彈簧）：<b>上下甩＝橫波</b>、<b>前後推拉＝縱波</b>。</li>
+          <li>想看清楚：按「慢動作」或「暫停」；重來按「重置」。</li>
+          <li>波太小或太大：調「手機靈敏度」。</li>
+          <li>「高中」：多出「高中實驗」列：振盪器與共振（駐波）、雙脈衝（疊加原理）；右端多了自由端、接粗繩、接細繩。</li>
+        </ol>
+      </div>
       <div class="copy">© 2026 蕭妤真 版權所有</div>
     </div>
     <div id="stats">
@@ -129,7 +163,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 <!-- ================= 手機頁 ================= -->
 <div id="phone" class="hide">
-  <h1>彈簧波動｜手機搖桿 <span class="ver">v1.5</span></h1>
+  <h1>彈簧波動｜手機搖桿 <span class="ver">v1.6</span></h1>
   <div id="pstat" class="pill off">尚未連線</div>
   <div class="row"><label for="pcode">配對代碼</label><input id="pcode" inputmode="numeric" maxlength="4"></div>
   <button class="big" id="pgo">開始</button>
@@ -152,7 +186,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 <script>
 "use strict";
-var VERSION = "v1.5";
+var VERSION = "v1.6";
 var PREFIX = "hhspring-wave-";
 var qs = new URLSearchParams(location.search);
 var isPhone = qs.has("p");
@@ -748,9 +782,10 @@ if (!isPhone) (function () {
     S.med = d; selOnly(".med", "d", d);
     if (d === "spring" && (S.end === "heavy" || S.end === "light")) setEnd("free");
     document.getElementById("tenG").classList.toggle("hide", S.med !== "rope" || S.hs);
-    document.getElementById("FmuG").classList.toggle("hide", S.med !== "rope");
+    document.getElementById("FmuG").classList.toggle("hide", S.med !== "rope" || !S.hs);
   }
-  function setSrc(v) { S.src = v; selOnly(".src", "s", v); }
+  function setSrc(v) { S.src = v; selOnly(".src", "s", v); showOsc(); }
+  function showOsc() { var on = S.hs && S.src === "osc"; document.getElementById("oscG").classList.toggle("hide", !on); document.getElementById("harmG").classList.toggle("hide", !on); }
   function setLevel(l) {
     S.hs = l === "hs"; selOnly(".lvl", "l", l);
     document.getElementById("hsbar").classList.toggle("hide", !S.hs);
@@ -758,7 +793,7 @@ if (!isPhone) (function () {
     document.querySelectorAll(".hsOnly, .hsCard").forEach(function (x) { x.classList.toggle("hide", !S.hs); });
     document.querySelectorAll(".jhCard").forEach(function (x) { x.classList.toggle("hide", S.hs); });
     if (!S.hs) { setSrc("hand"); if (S.end === "ring" || S.end === "heavy" || S.end === "light") setEnd("free"); }
-    setMed(S.med); reset();
+    setMed(S.med); showOsc(); reset();
   }
   document.querySelectorAll(".mode").forEach(function (b) { b.addEventListener("click", function () { setMode(b.dataset.m); reset(); }); });
   document.querySelectorAll(".end").forEach(function (b) { b.addEventListener("click", function () { setEnd(b.dataset.e); reset(); }); });
@@ -802,6 +837,9 @@ if (!isPhone) (function () {
   var pair = document.getElementById("pair");
   document.getElementById("pairX").addEventListener("click", function () { pair.classList.add("hide"); });
   document.getElementById("bQR").addEventListener("click", function () { pair.classList.toggle("hide"); });
+  var help = document.getElementById("help");
+  document.getElementById("bHelp").addEventListener("click", function () { help.classList.toggle("hide"); });
+  document.getElementById("helpX").addEventListener("click", function () { help.classList.add("hide"); });
   function msg(t) { var m = document.getElementById("msg"); m.textContent = t; clearTimeout(msg.t); msg.t = setTimeout(function () { m.textContent = ""; }, 8000); }
 
   /* ---- 連線：投影頁開一個 4 位數代碼的「房間」，手機連進來 ---- */
