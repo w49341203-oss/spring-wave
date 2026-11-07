@@ -86,7 +86,7 @@ a.btn{text-decoration:none;display:inline-block;color:var(--fg)}
 <div id="disp" class="hide">
   <header>
     <h1>聲音分析：響度、音調、音色</h1>
-    <span class="ver">v1.3</span>
+    <span class="ver">v1.4</span>
     <span id="conn" class="pill off">手機未連線</span>
     <span class="sp"></span>
     <a class="btn" href="index.html">〰 彈簧波動</a>
@@ -141,7 +141,7 @@ a.btn{text-decoration:none;display:inline-block;color:var(--fg)}
 
 <!-- ================= 手機頁 ================= -->
 <div id="phone" class="hide">
-  <h1>聲音分析｜手機麥克風 <span class="ver">v1.3</span></h1>
+  <h1>聲音分析｜手機麥克風 <span class="ver">v1.4</span></h1>
   <div id="pstat" class="pill off">尚未連線</div>
   <div class="row"><label for="pcode">配對代碼</label><input id="pcode" inputmode="numeric" maxlength="4"></div>
   <button class="big" id="pgo">開始收音</button>
@@ -246,7 +246,7 @@ if (isPhone) (function () {
   document.getElementById("phone").classList.remove("hide");
   var pcode = document.getElementById("pcode"), pstat = document.getElementById("pstat");
   pcode.value = (qs.get("p") || "").replace(/\D/g, "").slice(0, 4);
-  var conn = null, peer = null, actx = null, an = null, anL = null, lbuf = null, tbuf, fbuf, timer = null, retries = 0, cal = -15, mic = null;
+  var conn = null, peer = null, actx = null, an = null, anL = null, lbuf = null, wide = false, tbuf, fbuf, timer = null, retries = 0, cal = -15, mic = null;
   function stat(t, ok) { pstat.textContent = t; pstat.className = "pill " + (ok ? "on" : "off"); }
 
   // 找音高：YIN 方法（看波形「每隔多久重複一次」），先每 2 點取 1 點加快速度
@@ -315,7 +315,7 @@ if (isPhone) (function () {
     for (i = 0; i < NP; i++) peak = Math.max(peak, Math.abs(tbuf[st + i * STEP]));
     peak = Math.max(peak, 1e-4);
     for (i = 0; i < NP; i++) wb[i] = Math.round(tbuf[st + i * STEP] / peak * 127) + 128;
-    var df = sr / an.fftSize, nb = Math.min(fbuf.length, Math.ceil(4200 / df)), sb = new Uint8Array(nb);
+    var df = sr / an.fftSize, nb = Math.min(fbuf.length, Math.ceil((wide ? 8200 : 4200) / df)), sb = new Uint8Array(nb);
     for (i = 0; i < nb; i++) sb[i] = Math.max(0, Math.min(255, Math.round((fbuf[i] + 110) * 2.55)));
     // 壓縮成一串文字（base64），每包約 1 KB，比原本小很多
     if (conn && conn.open) conn.send({ w: b64(wb), pk: +peak.toFixed(5), wsr: sr / STEP, s: b64(sb), df: df, rms: +rms.toFixed(6), f0: +p[0].toFixed(1), cl: +p[1].toFixed(2) });
@@ -332,7 +332,7 @@ if (isPhone) (function () {
     peer.on("open", function () {
       conn = peer.connect(PREFIX + code, { serialization: "json", reliable: false });
       conn.on("open", function () { retries = 0; stat("已連線 ✔ 對著手機發出聲音", true); if (mic) conn.send({ mic: mic }); });
-      conn.on("data", function (d) { if (!d) return; if (typeof d.cal === "number") cal = d.cal; if ("want" in d) onWant(d.want, d.sens); if (d.ack === sk.id && d.ack) { clearInterval(sk.sendT); sk.pkt = null; } });
+      conn.on("data", function (d) { if (!d) return; if (typeof d.cal === "number") cal = d.cal; if ("want" in d) { wide = d.wide === true; onWant(d.want, d.sens); } if (d.ack === sk.id && d.ack) { clearInterval(sk.sendT); sk.pkt = null; } });
       conn.on("close", function () { stat("連線中斷，自動重連中…", false); setTimeout(retry, 3000); });
     });
     peer.on("error", function (e) {
@@ -569,7 +569,7 @@ if (!isPhone) (function () {
   var bStrike = document.getElementById("bStrike"), bArm = document.getElementById("bArm"), strikeCtl = document.getElementById("strikeCtl");
   function setFrozen(v) { S.frozen = v; var b = document.getElementById("bFreeze"); b.textContent = v ? "繼續" : "凍結"; b.classList.toggle("sel", v); }
   function selBtn(cls, v) { document.querySelectorAll(cls).forEach(function (x) { x.classList.toggle("sel", x.dataset.v === String(v)); }); }
-  function wantSync() { if (dconn && dconn.open) dconn.send({ want: S.waiting ? S.armId : 0, sens: S.sens }); }
+  function wantSync() { if (dconn && dconn.open) dconn.send({ want: S.waiting ? S.armId : 0, sens: S.sens, wide: S.strike }); }
   function armUI() { bArm.textContent = S.waiting ? "取消等待" : "等待敲擊"; bArm.classList.toggle("sel", S.waiting); }
   function stopWait() { S.waiting = false; armUI(); wantSync(); }
   bStrike.addEventListener("click", function () {
@@ -577,6 +577,7 @@ if (!isPhone) (function () {
     strikeCtl.classList.toggle("hide", !S.strike);
     document.querySelectorAll(".strikeOnly").forEach(function (x) { x.classList.toggle("hide", !S.strike); });
     document.getElementById("cStrike").classList.toggle("hide", !S.strike);
+    wantSync();
     if (S.strike) { S.wms = "all"; selBtn(".wz", "all"); S.fmax = 8000; selBtn(".fz", 8000); }
     else {
       stopWait();
@@ -594,7 +595,6 @@ if (!isPhone) (function () {
   seg(".ssz", "v", function (v) { S.sens = +v; wantSync(); });
   // 這條連線允許掉封包：等待中每 0.5 秒重講一次，手機收到同一個號碼不會重來
   setInterval(function () {
-    if (!S.strike) return;
     wantSync();
     if (S.waiting && !S.armOK && performance.now() - S.armAt > 3000) { msg("手機沒有回應。請把手機頁重新整理（可能還是舊版），再按「開始收音」。"); S.armAt = performance.now(); }
   }, 500);
