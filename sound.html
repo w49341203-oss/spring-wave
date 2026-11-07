@@ -42,6 +42,7 @@ a.btn{text-decoration:none;display:inline-block;color:var(--fg)}
 .card b{display:block;font-size:14px;color:var(--dim);font-weight:500}
 .card .big{display:block;font-size:clamp(24px,2.5vw,34px);font-weight:700;font-variant-numeric:tabular-nums}
 .card small{display:block;font-size:13px;color:var(--dim)}
+.pk{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-variant-numeric:tabular-nums}.pk b{display:inline;font-size:clamp(20px,2vw,28px);font-weight:700;color:var(--fg)}.pk.first b{color:var(--yellow)}.pk small{display:inline}
 .card .note{display:block;font-size:20px;font-weight:700;color:var(--yellow)}
 .hbar{display:grid;grid-template-columns:34px 1fr 62px;gap:6px;align-items:center;font-size:13px;margin-top:1px}
 .hbar .t{height:12px;background:#0b0f19;border-radius:6px;overflow:hidden}
@@ -85,7 +86,7 @@ a.btn{text-decoration:none;display:inline-block;color:var(--fg)}
 <div id="disp" class="hide">
   <header>
     <h1>聲音分析：響度、音調、音色</h1>
-    <span class="ver">v1.2</span>
+    <span class="ver">v1.3</span>
     <span id="conn" class="pill off">手機未連線</span>
     <span class="sp"></span>
     <a class="btn" href="index.html">〰 彈簧波動</a>
@@ -95,9 +96,10 @@ a.btn{text-decoration:none;display:inline-block;color:var(--fg)}
   </header>
   <div id="bar">
     <div class="grp"><span class="glabel">① 畫面</span><div class="seg"><button class="btn" id="bFreeze">凍結</button></div></div>
+    <div class="grp"><span class="glabel">敲擊</span><button class="btn" id="bStrike">敲擊模式</button><span id="strikeCtl" class="grp hide"><button class="btn" id="bArm">等待敲擊</button><label>靈敏度</label><div class="seg"><button class="btn sm ssz" data-v="0">低</button><button class="btn sm ssz sel" data-v="1">中</button><button class="btn sm ssz" data-v="2">高</button></div></span></div>
     <div class="grp"><span class="glabel">② 比較</span><input id="nm" placeholder="名稱（例：男生）" maxlength="10"><div class="seg"><button class="btn" id="bSave">存下來比較</button><button class="btn" id="bClear">全部清除</button></div></div>
-    <div class="grp"><span class="glabel">波形範圍</span><div class="seg"><button class="btn sm wz" data-v="5">5 ms</button><button class="btn sm wz sel" data-v="10">10 ms</button><button class="btn sm wz" data-v="20">20 ms</button><button class="btn sm wz" data-v="30">30 ms</button></div></div>
-    <div class="grp"><span class="glabel">頻譜範圍</span><div class="seg"><button class="btn sm fz" data-v="1000">1000 Hz</button><button class="btn sm fz sel" data-v="2000">2000 Hz</button><button class="btn sm fz" data-v="4000">4000 Hz</button></div></div>
+    <div class="grp"><span class="glabel">波形範圍</span><div class="seg"><button class="btn sm wz" data-v="5">5 ms</button><button class="btn sm wz sel" data-v="10">10 ms</button><button class="btn sm wz" data-v="20">20 ms</button><button class="btn sm wz" data-v="30">30 ms</button><button class="btn sm wz strikeOnly hide" data-v="all">整段</button></div></div>
+    <div class="grp"><span class="glabel">頻譜範圍</span><div class="seg"><button class="btn sm fz" data-v="1000">1000 Hz</button><button class="btn sm fz sel" data-v="2000">2000 Hz</button><button class="btn sm fz" data-v="4000">4000 Hz</button><button class="btn sm fz strikeOnly hide" data-v="8000">8000 Hz</button></div></div>
     <div class="grp"><span class="glabel">分貝校正</span><input type="range" id="cal" min="-30" max="10" step="1" value="-15"><span id="calV" style="min-width:56px">−15 dB</span></div>
     <div class="grp"><span class="glabel">波形高度</span><div class="seg"><button class="btn sm az sel" data-v="auto">自動放大</button><button class="btn sm az" data-v="real">實際大小</button></div></div>
   </div>
@@ -120,6 +122,7 @@ a.btn{text-decoration:none;display:inline-block;color:var(--fg)}
           <li><b>響度</b>看分貝與波形的高低（振幅）；<b>音調</b>看頻率，波形越密頻率越高；<b>音色</b>看波形的形狀和頻譜上的泛音。</li>
           <li>想慢慢看：按「凍結」。想比較：在名稱欄輸入（例如「男生」），按「存下來比較」，最多 4 筆疊在一起看。</li>
           <li>「波形高度」選「實際大小」才看得出大聲、小聲的振幅差別；「自動放大」比較好看形狀。</li>
+          <li><b>敲擊樂器</b>：按「敲擊模式」→「等待敲擊」→ 敲一下，手機會自動抓下這一下，白板停住並標出最強的幾個頻率（40～8000 Hz）。誤觸發就把靈敏度調低，敲了沒反應就調高。敲擊樂器常同時有好幾個頻率，不一定是整數倍；鼓、拍手這類頻率很分散的聲音可能沒有明顯的尖峰。</li>
           <li>分貝不準時調「分貝校正」：手機放在講台上，跟分貝計（或分貝計 App）同時量，把數字調到一樣；調好會記住。</li>
         </ol>
       </div>
@@ -127,6 +130,7 @@ a.btn{text-decoration:none;display:inline-block;color:var(--fg)}
       <div class="copy">© 2026 蕭妤真 版權所有</div>
     </div>
     <div id="stats">
+      <div class="card hide" id="cStrike"><b>敲擊：最強的頻率</b><div id="sPeak"><small>按「等待敲擊」，再敲一下</small></div></div>
       <div class="card"><b>響度（大小聲）</b><span class="big" id="sDb">—</span><small>分貝 dB（手機估計值）</small><small id="sDbW"></small><small>分貝跟距離有關：離手機越近，數字越大</small><small id="sMic" style="color:var(--gold)"></small></div>
       <div class="card"><b>音調（高低）</b><span class="big" id="sF">—</span><span class="note" id="sNote"></span><small>頻率越高，音調越高</small></div>
       <div class="card"><b>比較清單</b><div id="sList"><small>還沒有存任何聲音</small></div></div>
@@ -137,7 +141,7 @@ a.btn{text-decoration:none;display:inline-block;color:var(--fg)}
 
 <!-- ================= 手機頁 ================= -->
 <div id="phone" class="hide">
-  <h1>聲音分析｜手機麥克風 <span class="ver">v1.2</span></h1>
+  <h1>聲音分析｜手機麥克風 <span class="ver">v1.3</span></h1>
   <div id="pstat" class="pill off">尚未連線</div>
   <div class="row"><label for="pcode">配對代碼</label><input id="pcode" inputmode="numeric" maxlength="4"></div>
   <button class="big" id="pgo">開始收音</button>
@@ -149,6 +153,7 @@ a.btn{text-decoration:none;display:inline-block;color:var(--fg)}
   <div>音量</div>
   <div class="lvl"><div id="plv"></div></div>
   <div id="pinfo2" style="font-size:18px">—</div>
+  <div id="pstrike" style="font-size:18px;font-weight:700;color:var(--yellow)"></div>
   <p class="ver" id="pinfo">手機只傳分析後的數字到白板，不傳聲音本身，白板不會播出聲音。</p>
   <div class="copy">© 2026 蕭妤真 版權所有</div>
 </div>
@@ -166,13 +171,82 @@ function noteName(f) {
 }
 
 /* ============================================================
+   敲擊分析（手機端呼叫）：x 是敲擊前後約 0.7 秒的聲音
+   找到敲下去的那一刻 → 算到 8000 Hz 的頻譜 → 挑出最明顯的尖峰
+   ============================================================ */
+function strikeFFT(re, im) {
+  var N = re.length, i, j = 0, k, m, t;
+  for (i = 1; i < N; i++) { m = N >> 1; while (j & m) { j ^= m; m >>= 1; } j |= m; if (i < j) { t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; } }
+  var cs = new Float64Array(N / 2), sn = new Float64Array(N / 2);
+  for (i = 0; i < N / 2; i++) { cs[i] = Math.cos(2 * Math.PI * i / N); sn[i] = -Math.sin(2 * Math.PI * i / N); }
+  for (m = 2; m <= N; m <<= 1) {
+    var hf = m >> 1, stp = N / m;
+    for (i = 0; i < N; i += m) for (k = 0; k < hf; k++) {
+      var a = k * stp, p = i + k, q = p + hf, tr = re[q] * cs[a] - im[q] * sn[a], ti = re[q] * sn[a] + im[q] * cs[a];
+      re[q] = re[p] - tr; im[q] = im[p] - ti; re[p] += tr; im[p] += ti;
+    }
+  }
+}
+function analyzeStrike(x, sr) {
+  var n = x.length, i, peak = 0, nl = 0, NN = Math.min(2048, n);
+  for (i = 0; i < n; i++) peak = Math.max(peak, Math.abs(x[i]));
+  for (i = 0; i < NN; i++) nl += x[i] * x[i];
+  nl = Math.sqrt(nl / NN);
+  // 敲下去的那一刻：第一個明顯超過背景聲的地方
+  var th = Math.min(0.5 * peak, Math.max(0.15 * peak, 5 * nl)), on = 0;
+  for (i = 0; i < n; i++) if (Math.abs(x[i]) >= th) { on = i; break; }
+  var st = Math.max(0, on - Math.round(sr * 0.001)), L = n - st, FFTN = 65536;
+  var re = new Float64Array(FFTN), im = new Float64Array(FFTN), mean = 0, sumW = 0, rise = Math.max(1, Math.round(sr * 0.001)), tail = Math.floor(L / 2);
+  for (i = 0; i < L; i++) mean += x[st + i];
+  mean /= L;
+  // 開頭不能削掉（短促的聲音都在開頭），只把後半段慢慢收掉
+  for (i = 0; i < L && i < FFTN; i++) {
+    var wn = i < rise ? 0.5 - 0.5 * Math.cos(Math.PI * i / rise) : i < tail ? 1 : 0.5 + 0.5 * Math.cos(Math.PI * (i - tail) / (L - tail));
+    re[i] = (x[st + i] - mean) * wn; sumW += wn;
+  }
+  strikeFFT(re, im);
+  var half = FFTN / 2, bf = sr / FFTN, db = new Float32Array(half);
+  for (i = 0; i < half; i++) db[i] = 20 * Math.log10(Math.max(2 * Math.sqrt(re[i] * re[i] + im[i] * im[i]) / Math.max(sumW, 1), 1e-9));
+  var lo = Math.ceil(40 / bf), hi = Math.min(half - 2, Math.floor(8000 / bf)), top = -400;
+  for (i = lo; i <= hi; i++) if (db[i] > top) top = db[i];
+  // 找尖峰：要比附近（前後 300 Hz）平均高出很多，才算真的有這個頻率，不是雜音
+  var W = Math.round(300 / bf), P = new Float64Array(hi + 2), peaks = [];
+  for (i = lo; i <= hi; i++) P[i + 1] = P[i] + db[i];
+  for (i = lo + 1; i < hi; i++) {
+    if (!(db[i] > db[i - 1] && db[i] >= db[i + 1]) || db[i] < top - 35) continue;
+    var a0 = Math.max(lo, i - W), b0 = Math.min(hi + 1, i + W + 1), local = (P[b0] - P[a0]) / (b0 - a0);
+    if (db[i] - local < 14) continue;
+    var dn = db[i - 1] - 2 * db[i] + db[i + 1], sh = dn ? 0.5 * (db[i - 1] - db[i + 1]) / dn : 0;
+    peaks.push({ f: (i + sh) * bf, d: db[i] });
+  }
+  peaks.sort(function (u, v) { return v.d - u.d; });
+  var keep = [];
+  peaks.forEach(function (c) { if (keep.length < 5 && keep.every(function (o) { return Math.abs(o.f - c.f) >= 30; })) keep.push(c); });
+  keep = keep.map(function (c) { return { f: +c.f.toFixed(1), d: +(c.d - top).toFixed(1) }; });
+  // 傳給白板的頻譜：每 4 Hz 一點，保留這一格裡最大的值，尖峰才不會被抹掉；最強的頂到最上面，往下 60 dB
+  var DF = 4, NB = 2000, sp = new Uint8Array(NB), mx = new Float32Array(NB).fill(-400);
+  for (i = 0; i < half; i++) { var ix = Math.floor(i * bf / DF); if (ix >= NB) break; if (db[i] > mx[ix]) mx[ix] = db[i]; }
+  for (i = 0; i < NB; i++) sp[i] = Math.max(0, Math.min(255, Math.round(255 * (1 + (mx[i] - top) / 60))));
+  // 波形：開頭的細節（每 2 點取 1 點）＋整段的輪廓
+  var pk = Math.max(peak, 1e-4), STEP = 2, NP = 800, wb = new Uint8Array(NP), env = new Uint8Array(800), rms = 0, RN = Math.min(2048, L);
+  for (i = 0; i < NP; i++) { var ws = st + i * STEP; wb[i] = Math.round((ws < n ? x[ws] : 0) / pk * 127) + 128; }
+  for (i = 0; i < 400; i++) {
+    var c0 = st + Math.floor(i * L / 400), c1 = Math.max(c0 + 1, st + Math.floor((i + 1) * L / 400)), mn = 0, mxv = 0;
+    for (var j = c0; j < c1 && j < n; j++) { if (x[j] < mn) mn = x[j]; if (x[j] > mxv) mxv = x[j]; }
+    env[i * 2] = Math.round(mn / pk * 127) + 128; env[i * 2 + 1] = Math.round(mxv / pk * 127) + 128;
+  }
+  for (i = 0; i < RN; i++) rms += x[st + i] * x[st + i];
+  return { w: wb, env: env, s: sp, df: DF, pk: +peak.toFixed(5), wsr: sr / STEP, rms: +Math.sqrt(rms / RN).toFixed(6), dur: +(L / sr * 1000).toFixed(0), peaks: keep };
+}
+
+/* ============================================================
    手機端：麥克風 → 分析 → 只把結果數字傳給白板
    ============================================================ */
 if (isPhone) (function () {
   document.getElementById("phone").classList.remove("hide");
   var pcode = document.getElementById("pcode"), pstat = document.getElementById("pstat");
   pcode.value = (qs.get("p") || "").replace(/\D/g, "").slice(0, 4);
-  var conn = null, peer = null, actx = null, an = null, tbuf, fbuf, timer = null, retries = 0, cal = -15, mic = null;
+  var conn = null, peer = null, actx = null, an = null, anL = null, lbuf = null, tbuf, fbuf, timer = null, retries = 0, cal = -15, mic = null;
   function stat(t, ok) { pstat.textContent = t; pstat.className = "pill " + (ok ? "on" : "off"); }
 
   // 找音高：YIN 方法（看波形「每隔多久重複一次」），先每 2 點取 1 點加快速度
@@ -189,9 +263,43 @@ if (isPhone) (function () {
     return [srd / (best + sh), 1 - b];
   }
   function b64(u8) { var t = ""; for (var i = 0; i < u8.length; i++) t += String.fromCharCode(u8[i]); return btoa(t); }
+  /* ---- 敲擊模式：白板說「等」，手機就自己盯著音量，突然變大就抓下來 ---- */
+  var SENS = [{ k: 6, floor: 0.08 }, { k: 3.5, floor: 0.03 }, { k: 2.2, floor: 0.012 }];
+  var sk = { id: 0, state: "idle", sens: 1, bg: 0, t0: 0, capT: 0, sendT: 0, pkt: null };
+  function skMsg(t) { document.getElementById("pstrike").textContent = t; }
+  function skStop() { clearTimeout(sk.capT); clearInterval(sk.sendT); sk.pkt = null; }
+  function onWant(want, sens) {
+    if (want === 0) { if (sk.id) { skStop(); sk.id = 0; sk.state = "idle"; skMsg(""); } return; }
+    if (typeof want !== "number") return;
+    if (want !== sk.id) { skStop(); sk.id = want; sk.state = "warm"; sk.t0 = performance.now(); sk.bg = 0; skMsg("等待敲擊中…"); }
+    sk.sens = sens === 0 || sens === 2 ? sens : 1;
+    if ((sk.state === "warm" || sk.state === "wait") && conn && conn.open) conn.send({ armed: want });
+  }
+  function skTick() {
+    if (sk.state !== "warm" && sk.state !== "wait") return;
+    var pk = 0, i;
+    for (i = 0; i < tbuf.length; i++) { var v = Math.abs(tbuf[i]); if (v > pk) pk = v; }
+    if (sk.state === "warm") { sk.bg = Math.max(sk.bg, pk); if (performance.now() - sk.t0 > 300) sk.state = "wait"; return; }
+    var c = SENS[sk.sens];
+    if (pk > c.floor && pk > c.k * sk.bg) { sk.state = "cap"; skMsg("抓到了，分析中…"); var id = sk.id; sk.capT = setTimeout(function () { skCapture(id); }, 480); return; }
+    sk.bg = sk.bg * 0.97 + pk * 0.03;
+  }
+  function skCapture(id) {
+    if (id !== sk.id || sk.state !== "cap") return;
+    anL.getFloatTimeDomainData(lbuf);
+    var r = analyzeStrike(lbuf, actx.sampleRate);
+    sk.state = "done";
+    sk.pkt = { strike: id, w: b64(r.w), env: b64(r.env), s: b64(r.s), df: r.df, pk: r.pk, wsr: r.wsr, rms: r.rms, dur: r.dur, peaks: r.peaks };
+    skMsg(r.peaks.length ? "已送到白板：最強 " + Math.round(r.peaks[0].f) + " Hz" : "已送到白板：沒有明顯的尖峰");
+    // 這條連線允許掉封包：重送到白板回覆「收到」為止，最多 8 次
+    var tries = 0;
+    function push() { if (!sk.pkt || tries++ >= 8) { clearInterval(sk.sendT); return; } if (conn && conn.open) conn.send(sk.pkt); }
+    push(); sk.sendT = setInterval(push, 400);
+  }
   function send() {
     if (!an) return;
     an.getFloatTimeDomainData(tbuf); an.getFloatFrequencyData(fbuf);
+    skTick();
     // 網路塞車時不排隊：上一包還沒送出去，就丟掉這一包，白板永遠顯示最新的
     var dc = conn && conn.dataChannel;
     if (dc && dc.bufferedAmount > 12000) return;
@@ -224,7 +332,7 @@ if (isPhone) (function () {
     peer.on("open", function () {
       conn = peer.connect(PREFIX + code, { serialization: "json", reliable: false });
       conn.on("open", function () { retries = 0; stat("已連線 ✔ 對著手機發出聲音", true); if (mic) conn.send({ mic: mic }); });
-      conn.on("data", function (d) { if (d && typeof d.cal === "number") cal = d.cal; });
+      conn.on("data", function (d) { if (!d) return; if (typeof d.cal === "number") cal = d.cal; if ("want" in d) onWant(d.want, d.sens); if (d.ack === sk.id && d.ack) { clearInterval(sk.sendT); sk.pkt = null; } });
       conn.on("close", function () { stat("連線中斷，自動重連中…", false); setTimeout(retry, 3000); });
     });
     peer.on("error", function (e) {
@@ -246,7 +354,9 @@ if (isPhone) (function () {
       if (!actx) {
         actx = new (window.AudioContext || window.webkitAudioContext)();
         an = actx.createAnalyser(); an.fftSize = 4096; an.smoothingTimeConstant = 0;   // 分析時間 0.085 秒：反應快
-        actx.createMediaStreamSource(stream).connect(an);   // 不接到喇叭：手機不會播出聲音
+        var srcNode = actx.createMediaStreamSource(stream); srcNode.connect(an);   // 不接到喇叭：手機不會播出聲音
+        anL = actx.createAnalyser(); anL.fftSize = 32768; anL.smoothingTimeConstant = 0; srcNode.connect(anL);   // 敲擊模式用：隨時留著最近約 0.7 秒
+        lbuf = new Float32Array(anL.fftSize);
         tbuf = new Float32Array(an.fftSize); fbuf = new Float32Array(an.frequencyBinCount);
         timer = setInterval(send, 40);
       }
@@ -266,7 +376,7 @@ if (!isPhone) (function () {
   var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
   var C = { blue: "#58C4DD", teal: "#5CD0B3", green: "#83C167", yellow: "#FFFF00", gold: "#F0AC5F", red: "#FC6255", dim: "#93a0b8", line: "#2a3550" };
   var SAVE_COL = ["#FC6255", "#83C167", "#C38FFF", "#F0AC5F"];
-  var S = { frozen: false, wms: 10, fmax: 2000, auto: true };
+  var S = { frozen: false, wms: 10, fmax: 2000, auto: true, strike: false, waiting: false, armId: 0, armOK: false, armAt: 0, sens: 1 };
   var cur = null, saved = [], loud = [], lastData = 0, t0 = performance.now();
 
   // 分貝 ≈ 20 × log10(音量) ＋ 100 ＋ 校正值；校正值可在工具列調整，會記住
@@ -295,11 +405,21 @@ if (!isPhone) (function () {
   }
 
   function drawWave(d, x0, y0, w, h, col, lw) {
-    var n = Math.min(d.w.length, Math.round(S.wms / 1000 * d.wsr)), mid = y0 + h / 2;
+    var ms = S.wms === "all" ? 30 : S.wms, n = Math.min(d.w.length, Math.round(ms / 1000 * d.wsr)), mid = y0 + h / 2;
     var scale = S.auto ? (h / 2 - 10) / 127 : (h / 2 - 10) / 127 * Math.min(1, d.pk / 0.3);
     ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath();
-    for (var i = 0; i < n; i++) { var x = x0 + i / (S.wms / 1000 * d.wsr) * w, y = mid - d.w[i] * scale; if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); }
+    for (var i = 0; i < n; i++) { var x = x0 + i / (ms / 1000 * d.wsr) * w, y = mid - d.w[i] * scale; if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); }
     ctx.stroke();
+  }
+  // 敲擊的整段輪廓：看得到聲音怎麼變小；axis 是橫軸總長（毫秒）
+  function drawEnv(d, x0, y0, w, h, col, axis, fill) {
+    var cols = d.env.length / 2, mid = y0 + h / 2, scale = S.auto ? (h / 2 - 10) / 127 : (h / 2 - 10) / 127 * Math.min(1, d.pk / 0.3), wd = d.dur / axis * w, i;
+    ctx.beginPath();
+    for (i = 0; i < cols; i++) { var xa = x0 + i / cols * wd, ya = mid - d.env[i * 2 + 1] * scale; if (i) ctx.lineTo(xa, ya); else ctx.moveTo(xa, ya); }
+    for (i = cols - 1; i >= 0; i--) ctx.lineTo(x0 + i / cols * wd, mid - d.env[i * 2] * scale);
+    ctx.closePath();
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.stroke();
   }
   function drawSpec(d, x0, y0, w, h, col, lw, fill) {
     var nb = Math.min(d.s.length, Math.ceil(S.fmax / d.df));
@@ -315,15 +435,16 @@ if (!isPhone) (function () {
     var pad = 14, x0 = 56, w = W - x0 - pad, hW = H * 0.42, hS = H * 0.33, hL = H - hW - hS - pad * 4 - 20;
     var yW = pad, yS = yW + hW + pad + 10, yL = yS + hS + pad + 10;
     // ---- 波形 ----
-    box(x0, yW, w, hW, "波形（聲音的振動，橫軸＝時間）" + (S.frozen ? "　⏸ 已凍結" : ""));
+    var isEnv = S.wms === "all" && cur && cur.env, wMs = isEnv ? cur.dur : S.wms === "all" ? 30 : S.wms;
+    box(x0, yW, w, hW, "波形（聲音的振動，橫軸＝時間）" + (cur && cur.strike && S.frozen ? "　⏸ 已抓到這一下" : S.frozen ? "　⏸ 已凍結" : ""));
     ctx.strokeStyle = C.line; ctx.beginPath(); ctx.moveTo(x0, yW + hW / 2); ctx.lineTo(x0 + w, yW + hW / 2); ctx.stroke();
-    for (var k = 0; k <= 5; k++) text((S.wms * k / 5).toFixed(S.wms < 10 ? 1 : 0) + " ms", x0 + w * k / 5, yW + hW + 16, C.dim, 13, "center");
+    for (var k = 0; k <= 5; k++) text((wMs * k / 5).toFixed(wMs < 10 ? 1 : 0) + " ms", x0 + w * k / 5, yW + hW + 16, C.dim, 13, "center");
     ctx.save(); ctx.beginPath(); ctx.rect(x0, yW, w, hW); ctx.clip();
-    saved.forEach(function (sv) { if (sv.on) drawWave(sv.d, x0, yW, w, hW, sv.col, 2); });
-    if (cur) drawWave(cur, x0, yW, w, hW, C.teal, 2.5);
+    saved.forEach(function (sv) { if (!sv.on) return; if (isEnv && sv.d.env) drawEnv(sv.d, x0, yW, w, hW, sv.col, wMs); else drawWave(sv.d, x0, yW, w, hW, sv.col, 2); });
+    if (isEnv) drawEnv(cur, x0, yW, w, hW, C.teal, wMs, "rgba(92,208,179,0.35)"); else if (cur) drawWave(cur, x0, yW, w, hW, C.teal, 2.5);
     if (cur && cur.f0 && cur.cl > 0.8) {   // 標一個週期
       var T = 1000 / cur.f0;
-      if (T < S.wms) { var xa = x0 + 0, xb = x0 + T / S.wms * w, yb = yW + hW - 14;
+      if (T < wMs) { var xa = x0 + 0, xb = x0 + T / wMs * w, yb = yW + hW - 14;
         ctx.strokeStyle = C.gold; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(xa, yb - 6); ctx.lineTo(xa, yb); ctx.lineTo(xb, yb); ctx.lineTo(xb, yb - 6); ctx.stroke();
         text("一個週期 ≈ " + T.toFixed(2) + " ms", (xa + xb) / 2 + 4, yb - 8, C.gold, 14, xb - xa < 140 ? "left" : "center"); }
     }
@@ -341,6 +462,13 @@ if (!isPhone) (function () {
         ctx.beginPath(); ctx.moveTo(fx, yS + 26); ctx.lineTo(fx, yS + hS); ctx.stroke(); ctx.setLineDash([]);
         text(k === 1 ? "基音 " + Math.round(cur.f0) + " Hz" : k + "f", fx + 3, yS + 40 + (k % 2) * 14, k === 1 ? C.yellow : C.gold, 13); }
     }
+    if (cur && cur.peaks) cur.peaks.forEach(function (p, i) {
+      if (p.f > S.fmax) return;
+      var px = x0 + p.f / S.fmax * w, right = px > x0 + w - 90;
+      ctx.strokeStyle = i ? "rgba(240,172,95,0.7)" : C.yellow; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(px, yS + 26); ctx.lineTo(px, yS + hS); ctx.stroke(); ctx.setLineDash([]);
+      text(Math.round(p.f) + " Hz", px + (right ? -4 : 4), yS + 42 + i * 18, i ? C.gold : C.yellow, i ? 15 : 17, right ? "right" : "left");
+    });
     ctx.restore();
     // ---- 響度紀錄 ----
     if (hL > 40) {
@@ -352,7 +480,8 @@ if (!isPhone) (function () {
       ctx.stroke(); ctx.restore();
       text("30 dB", x0 - 6, yL + hL, C.dim, 12, "right"); text("100 dB", x0 - 6, yL + 14, C.dim, 12, "right");
     }
-    if (!cur) text("等待手機收音中…（按右上「手機連線」）", x0 + w / 2, yW + hW / 2 - 10, C.dim, 20, "center");
+    if (S.waiting) { ctx.fillStyle = "rgba(11,15,25,0.8)"; ctx.fillRect(x0 + w / 2 - 190, yW + hW / 2 - 34, 380, 58); text("等待敲擊中…請敲一下", x0 + w / 2, yW + hW / 2 + 6, C.yellow, 30, "center"); }
+    else if (!cur) text("等待手機收音中…（按右上「手機連線」）", x0 + w / 2, yW + hW / 2 - 10, C.dim, 20, "center");
   }
 
   /* ---- 數字面板 ---- */
@@ -363,9 +492,12 @@ if (!isPhone) (function () {
     var db = dbOf(cur.rms);
     document.getElementById("sDb").textContent = db < 25 ? "很安靜" : Math.round(db) + " dB";
     document.getElementById("sDbW").textContent = db < 35 ? "很安靜（像安靜的房間）" : db < 50 ? "小聲（像輕聲說話）" : db < 65 ? "像一般講話" : db < 80 ? "大聲（像熱鬧的教室）" : "很大聲（長時間聽要小心）";
-    var ok = cur.f0 && cur.cl > 0.8;
-    document.getElementById("sF").textContent = ok ? Math.round(cur.f0) + " Hz" : "—";
-    document.getElementById("sNote").textContent = ok ? "≈ " + noteName(cur.f0) : "";
+    var ok = cur.f0 && cur.cl > 0.8, mainF = cur.peaks && cur.peaks.length ? cur.peaks[0].f : ok ? cur.f0 : 0;
+    document.getElementById("sF").textContent = mainF ? Math.round(mainF) + " Hz" : "—";
+    document.getElementById("sNote").textContent = mainF ? "≈ " + noteName(mainF) : "";
+    if (S.strike) document.getElementById("sPeak").innerHTML = S.waiting ? "<small>等待敲擊中…請敲一下</small>" : !cur.strike ? "<small>按「等待敲擊」，再敲一下</small>"
+      : !cur.peaks.length ? "<small>這一下沒有明顯的尖峰：頻率很分散（像拍手、敲桌子）。可以再敲一次，或靠近一點。</small>"
+      : cur.peaks.map(function (p, i) { return '<div class="pk' + (i ? "" : " first") + '"><b>' + Math.round(p.f) + " Hz</b><small>" + (i ? Math.round(p.d) + " dB" : "最強") + "</small></div>"; }).join("");
     var hm = harmonics(cur), el = document.getElementById("sHarm");
     if (hm) el.innerHTML = hm.map(function (v, i) { var pct = Math.max(2, Math.min(100, (v + 50) / 50 * 100));
       return '<div class="hbar"><span>' + (i ? (i + 1) + "f" : "基音") + '</span><div class="t"><div class="f" style="width:' + pct + '%"></div></div><span>' + (i ? (v < -45 ? "幾乎沒有" : Math.round(v) + " dB") : "0 dB") + "</span></div>"; }).join("");
@@ -376,7 +508,7 @@ if (!isPhone) (function () {
     if (!saved.length) { el.innerHTML = "<small>還沒有存任何聲音</small>"; return; }
     el.innerHTML = saved.map(function (sv, i) {
       return '<div class="sv"><input type="checkbox" data-i="' + i + '"' + (sv.on ? " checked" : "") + '><i style="background:' + sv.col + '"></i><span>' + sv.name + '</span>' +
-        '<small>' + (sv.d.f0 && sv.d.cl > 0.8 ? Math.round(sv.d.f0) + " Hz、" : "") + Math.round(dbOf(sv.d.rms)) + ' dB</small><button data-del="' + i + '">刪除</button></div>';
+        '<small>' + (sv.d.peaks && sv.d.peaks.length ? Math.round(sv.d.peaks[0].f) + " Hz、" : sv.d.f0 && sv.d.cl > 0.8 ? Math.round(sv.d.f0) + " Hz、" : "") + Math.round(dbOf(sv.d.rms)) + ' dB</small><button data-del="' + i + '">刪除</button></div>';
     }).join("");
   }
   document.getElementById("sList").addEventListener("click", function (e) {
@@ -391,10 +523,10 @@ if (!isPhone) (function () {
   function msg(t) { var m = document.getElementById("msg"); m.textContent = t; clearTimeout(msg.t); msg.t = setTimeout(function () { m.textContent = ""; }, 6000); }
   function seg(cls, key, fn) { document.querySelectorAll(cls).forEach(function (b) { b.addEventListener("click", function () {
     document.querySelectorAll(cls).forEach(function (x) { x.classList.toggle("sel", x === b); }); fn(b.dataset.v); }); }); }
-  seg(".wz", "v", function (v) { S.wms = +v; });
+  seg(".wz", "v", function (v) { S.wms = v === "all" ? "all" : +v; });
   seg(".fz", "v", function (v) { S.fmax = +v; });
   seg(".az", "v", function (v) { S.auto = v === "auto"; });
-  document.getElementById("bFreeze").addEventListener("click", function () { S.frozen = !S.frozen; this.textContent = S.frozen ? "繼續" : "凍結"; this.classList.toggle("sel", S.frozen); });
+  document.getElementById("bFreeze").addEventListener("click", function () { setFrozen(!S.frozen); });
   document.getElementById("bSave").addEventListener("click", function () {
     if (!cur) { msg("還沒有收到聲音，先連線手機。"); return; }
     if (saved.length >= 4) { msg("最多比較 4 筆，請先刪除一筆。"); return; }
@@ -433,8 +565,50 @@ if (!isPhone) (function () {
     for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i) - (signed ? 128 : 0);
     return out;
   }
+  /* ---- 敲擊模式（老師按鈕；真正的偵測在手機上，不受按鈕和網路延遲影響）---- */
+  var bStrike = document.getElementById("bStrike"), bArm = document.getElementById("bArm"), strikeCtl = document.getElementById("strikeCtl");
+  function setFrozen(v) { S.frozen = v; var b = document.getElementById("bFreeze"); b.textContent = v ? "繼續" : "凍結"; b.classList.toggle("sel", v); }
+  function selBtn(cls, v) { document.querySelectorAll(cls).forEach(function (x) { x.classList.toggle("sel", x.dataset.v === String(v)); }); }
+  function wantSync() { if (dconn && dconn.open) dconn.send({ want: S.waiting ? S.armId : 0, sens: S.sens }); }
+  function armUI() { bArm.textContent = S.waiting ? "取消等待" : "等待敲擊"; bArm.classList.toggle("sel", S.waiting); }
+  function stopWait() { S.waiting = false; armUI(); wantSync(); }
+  bStrike.addEventListener("click", function () {
+    S.strike = !S.strike; bStrike.classList.toggle("sel", S.strike);
+    strikeCtl.classList.toggle("hide", !S.strike);
+    document.querySelectorAll(".strikeOnly").forEach(function (x) { x.classList.toggle("hide", !S.strike); });
+    document.getElementById("cStrike").classList.toggle("hide", !S.strike);
+    if (S.strike) { S.wms = "all"; selBtn(".wz", "all"); S.fmax = 8000; selBtn(".fz", 8000); }
+    else {
+      stopWait();
+      if (S.wms === "all") { S.wms = 30; selBtn(".wz", 30); }
+      if (S.fmax === 8000) { S.fmax = 4000; selBtn(".fz", 4000); }
+      if (cur && cur.strike) setFrozen(false);
+    }
+  });
+  bArm.addEventListener("click", function () {
+    if (S.waiting) { stopWait(); return; }
+    if (!dconn || !dconn.open) { msg("請先連線手機，手機按「開始收音」。"); return; }
+    S.armId = Date.now() % 1000000000; S.armOK = false; S.armAt = performance.now(); S.waiting = true;
+    setFrozen(false); armUI(); wantSync();
+  });
+  seg(".ssz", "v", function (v) { S.sens = +v; wantSync(); });
+  // 這條連線允許掉封包：等待中每 0.5 秒重講一次，手機收到同一個號碼不會重來
+  setInterval(function () {
+    if (!S.strike) return;
+    wantSync();
+    if (S.waiting && !S.armOK && performance.now() - S.armAt > 3000) { msg("手機沒有回應。請把手機頁重新整理（可能還是舊版），再按「開始收音」。"); S.armAt = performance.now(); }
+  }, 500);
+  function onStrike(d) {
+    if (dconn && dconn.open) dconn.send({ ack: d.strike });
+    if (!S.waiting || d.strike !== S.armId || typeof d.w !== "string" || typeof d.s !== "string" || typeof d.env !== "string") return;
+    cur = { strike: true, w: unb64(d.w, true), env: unb64(d.env, true), s: unb64(d.s, false), df: +d.df, pk: +d.pk, wsr: +d.wsr, rms: +d.rms, dur: +d.dur, f0: 0, cl: 0,
+      peaks: (Array.isArray(d.peaks) ? d.peaks : []).slice(0, 5).map(function (p) { return { f: +p.f, d: +p.d }; }) };
+    S.waiting = false; armUI(); wantSync(); setFrozen(true);
+  }
   function onData(d) {
     if (d && d.mic) { document.getElementById("sMic").textContent = d.mic.agc === true ? "⚠ 這支手機沒有關掉「自動調音量」，小聲音會被放大，分貝會偏高" : ""; return; }
+    if (d && d.armed) { if (d.armed === S.armId) S.armOK = true; return; }
+    if (d && d.strike) { onStrike(d); return; }
     if (!d || !d.w || !d.s) return;
     if (typeof d.w === "string") { d.w = unb64(d.w, true); d.s = unb64(d.s, false); }
     lastData = performance.now();
@@ -457,7 +631,7 @@ if (!isPhone) (function () {
     dpeer.on("connection", function (c) {
       if (dconn && dconn.open) try { dconn.close(); } catch (e) {}
       dconn = c;
-      c.on("open", function () { setConn(true, "手機已連線 ✔"); pair.classList.add("hide"); c.send({ cal: CAL }); });
+      c.on("open", function () { setConn(true, "手機已連線 ✔"); pair.classList.add("hide"); c.send({ cal: CAL }); wantSync(); });
       c.on("data", onData);
       c.on("close", function () { setConn(false, "手機已斷線"); });
     });
